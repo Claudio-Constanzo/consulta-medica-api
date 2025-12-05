@@ -1,0 +1,57 @@
+<div class="agendar-container">
+  <h2>Agendar hora médica</h2>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+    <div class="form-group">
+      <label for="fecha">Fecha</label>
+      <input
+        id="fecha"
+        type="date"
+        formControlName="fecha"
+        [min]="minDate"
+        (change)="onDateChange($event)"
+      />
+      <small *ngIf="form.controls['fecha'].touched && form.controls['fecha'].invalid">
+        Selecciona una fecha válida.
+      </small>
+    </div>
+
+    <p *ngIf="validationMsg" class="info">
+      {{ validationMsg }}
+    </p>
+
+    <div class="form-group" *ngIf="!validationMsg">
+      <label for="hora">Hora</label>
+      <select id="hora" formControlName="hora">
+        <option value="" disabled selected>Selecciona una hora</option>
+        <option *ngFor="let slot of availableSlots" [value]="slot">
+          {{ slot }}
+        </option>
+      </select>
+      <small *ngIf="form.controls['hora'].touched && form.controls['hora'].invalid">
+        Selecciona una hora disponible.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="motivo">Motivo de la consulta</label>
+      <textarea
+        id="motivo"
+        rows="3"
+        formControlName="motivo"
+        placeholder="Describa brevemente el motivo..."
+      ></textarea>
+      <small *ngIf="form.controls['motivo'].touched && form.controls['motivo'].invalid">
+        El motivo es obligatorio (mínimo 5 caracteres).
+      </small>
+    </div>
+
+    <button type="submit" [disabled]="!!validationMsg">
+      Agendar
+    </button>
+
+    <p *ngIf="successMsg" class="success">{{ successMsg }}</p>
+    <p *ngIf="errorMsg" class="error">{{ errorMsg }}</p>
+  </form>
+</div>
