@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-// import { ApiService } from '../../services/api';
 
 
 @Injectable({
@@ -37,6 +36,13 @@ export class ApiService {
     `${this.baseUrl}/consultas/`,
     payload,
     { headers: this.getAuthHeaders() }
+  );
+}
+
+  registerUser(payload: any) {
+  return this.http.post(
+    `${this.baseUrl}/register/`,
+    payload
   );
 }
 

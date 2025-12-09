@@ -1,0 +1,68 @@
+<header class="main-header">
+  <div class="container">
+    <nav class="navbar">
+      <a class="logo" routerLink="/dashboard">
+        Consulta Médica
+      </a>
+
+      <ul class="nav-menu">
+        <li><a routerLink="/dashboard">Inicio</a></li>
+        <li><a routerLink="/agendar">Agendar hora</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button class="btn btn-secondary" routerLink="/login">
+          Cerrar sesión
+        </button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main class="dashboard-page">
+  <div class="container">
+    <section class="dashboard-header">
+      <h1 class="dashboard-title">Panel principal</h1>
+      <p class="dashboard-subtitle">
+        Revisa y gestiona las horas médicas agendadas.
+      </p>
+
+      <button class="btn btn-primary" routerLink="/agendar">
+        Agendar nueva hora
+      </button>
+    </section>
+
+    <section class="dashboard-content">
+      <h2 class="dashboard-section-title">Consultas agendadas</h2>
+
+      <p *ngIf="loading">Cargando consultas...</p>
+
+      <p *ngIf="errorMsg" class="error">
+        {{ errorMsg }}
+      </p>
+
+      <p *ngIf="!loading && !errorMsg && consultas.length === 0">
+        No hay consultas agendadas para mostrar.
+      </p>
+
+      <ul *ngIf="consultas.length">
+        <li *ngFor="let c of consultas" class="consulta-item">
+          <div class="consulta-main">
+            <span class="consulta-fecha">
+              {{ c.fecha | date:'short' }}
+            </span>
+            <span class="consulta-paciente">
+              Paciente: {{ c.paciente?.nombre || '—' }}
+            </span>
+            <span class="consulta-doctor">
+              Doctor: {{ c.doctor?.nombre || '—' }}
+            </span>
+          </div>
+          <div class="consulta-motivo" *ngIf="c.motivo">
+            Motivo: {{ c.motivo }}
+          </div>
+        </li>
+      </ul>
+    </section>
+  </div>
+</main>

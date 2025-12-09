@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login';
 import { DashboardComponent } from './pages/dashboard/dashboard';
 import { AgendarComponent } from './pages/agendar/agendar';
+import { RegistroComponent } from './pages/registro/registro';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
