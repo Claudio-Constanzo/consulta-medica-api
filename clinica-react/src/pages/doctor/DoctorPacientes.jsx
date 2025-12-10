@@ -1,28 +1,43 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+const API_BASE = "http://127.0.0.1:8000";
 
 const DoctorPacientes = () => {
   const navigate = useNavigate();
 
-  // Datos simulados
-  const pacientesSimulados = [
-    { id: 1, nombre: "Valeria Lopez", rut: "12.345.678-9", telefono: "+56 9 1234 5678", email: "valeria@mail.com" },
-    { id: 2, nombre: "Juliana Soto", rut: "16.987.654-3", telefono: "+56 9 9876 5432", email: "juliana@mail.com" },
-    { id: 3, nombre: "Camilo Torres", rut: "20.555.333-1", telefono: "+56 9 5555 3333", email: "camilo@mail.com" },
-  ];
-
   const [busqueda, setBusqueda] = useState("");
+  const [pacientes, setPacientes] = useState([]);
+  const [cargando, setCargando] = useState(false);
 
-  const pacientesFiltrados = pacientesSimulados.filter((p) =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  const fetchPacientes = async () => {
+    setCargando(true);
+    try {
+      const res = await fetch(`${API_BASE}/pacientes/`);
+      if (!res.ok) throw new Error("Error HTTP");
+      const data = await res.json();
+      setPacientes(data || []);
+    } catch (e) {
+      console.error("Error cargando pacientes:", e);
+      alert("No se pudieron cargar los pacientes desde el servidor.");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPacientes();
+  }, []);
+
+  const pacientesFiltrados = pacientes.filter((p) =>
+    `${p.nombre} ${p.apellido}`.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   return (
     <div className="min-h-screen bg-amber-50 p-6 flex justify-center">
       <div className="w-full max-w-5xl space-y-8">
-
-        {/* 🔙 Botón Volver igual que DoctorAgenda */}
+        {/* Volver */}
         <button
           onClick={() => navigate("/doctor/panel")}
           className="flex items-center gap-2 text-stone-600 hover:text-stone-900 mb-6"
@@ -37,11 +52,10 @@ const DoctorPacientes = () => {
 
         {/* Contenedor */}
         <section className="bg-white rounded-3xl border border-stone-200 shadow-sm p-6">
-
           {/* Buscador */}
           <input
             type="text"
-            placeholder="Buscar paciente por nombre..."
+            placeholder="Buscar paciente por nombre."
             className="w-full px-4 py-2 border border-stone-300 rounded-xl mb-4"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
@@ -60,26 +74,42 @@ const DoctorPacientes = () => {
               </thead>
 
               <tbody>
-                {pacientesFiltrados.length === 0 && (
+                {cargando && (
                   <tr>
-                    <td colSpan="4" className="px-4 py-6 text-center text-stone-500">
+                    <td
+                      colSpan="4"
+                      className="px-4 py-6 text-center text-stone-500"
+                    >
+                      Cargando pacientes...
+                    </td>
+                  </tr>
+                )}
+
+                {!cargando && pacientesFiltrados.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan="4"
+                      className="px-4 py-6 text-center text-stone-500"
+                    >
                       No se encontraron pacientes.
                     </td>
                   </tr>
                 )}
 
-                {pacientesFiltrados.map((paciente) => (
-                  <tr key={paciente.id} className="border-t">
-                    <td className="px-4 py-3">{paciente.nombre}</td>
-                    <td className="px-4 py-3">{paciente.rut}</td>
-                    <td className="px-4 py-3">{paciente.telefono}</td>
-                    <td className="px-4 py-3">{paciente.email}</td>
-                  </tr>
-                ))}
+                {!cargando &&
+                  pacientesFiltrados.map((paciente, idx) => (
+                    <tr key={idx} className="border-t">
+                      <td className="px-4 py-3">
+                        {paciente.nombre} {paciente.apellido}
+                      </td>
+                      <td className="px-4 py-3">{paciente.rut}</td>
+                      <td className="px-4 py-3">{paciente.telefono}</td>
+                      <td className="px-4 py-3">{paciente.email}</td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
-
         </section>
       </div>
     </div>

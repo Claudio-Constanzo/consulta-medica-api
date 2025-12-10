@@ -2,30 +2,27 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+const API = "http://127.0.0.1:8000";
+
 const UserFichaMedica = () => {
   const navigate = useNavigate();
 
+  const rut = localStorage.getItem("userRut");
   const [fichas, setFichas] = useState([]);
 
-  const mockFicha = [
-    {
-      titulo: "Diagnóstico de Faringitis",
-      notas: "Paciente con dolor de garganta, leve inflamación.",
-      fecha: "2025-01-12",
-    },
-    {
-      titulo: "Alergia Estacional",
-      notas: "Se recomienda antihistamínico por 5 días.",
-      fecha: "2025-01-10",
-    },
-  ];
-
+  // 🔥 Cargar fichas reales
   useEffect(() => {
-    // ❌ fetch desactivado
-    // const res = await fetch("...")
+    const cargar = async () => {
+      try {
+        const res = await fetch(`${API}/fichas/paciente/${rut}/`);
+        const data = await res.json();
+        setFichas(data);
+      } catch (error) {
+        alert("No se pudieron cargar las fichas médicas");
+      }
+    };
 
-    // ✔ mock realista
-    setFichas(mockFicha);
+    cargar();
   }, []);
 
   return (
@@ -47,14 +44,17 @@ const UserFichaMedica = () => {
         {fichas.length === 0 ? (
           <p className="text-stone-600">No tienes fichas registradas.</p>
         ) : (
-          fichas.map((f, i) => (
+          fichas.map((f) => (
             <div
-              key={i}
+              key={f.id_ficha}
               className="p-4 mb-4 rounded-xl bg-amber-50/40 border border-amber-100"
             >
               <p><strong>Título:</strong> {f.titulo}</p>
               <p><strong>Notas:</strong> {f.notas}</p>
-              <p><strong>Fecha:</strong> {f.fecha}</p>
+              <p>
+                <strong>Fecha:</strong>{" "}
+                {new Date(f.hora_ficha).toLocaleDateString("es-CL")}
+              </p>
             </div>
           ))
         )}

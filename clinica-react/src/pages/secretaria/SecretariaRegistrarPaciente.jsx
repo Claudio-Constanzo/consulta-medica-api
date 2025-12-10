@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+const API = "http://127.0.0.1:8000";
+
 const SecretariaRegistrarPaciente = () => {
   const navigate = useNavigate();
 
@@ -19,10 +21,31 @@ const SecretariaRegistrarPaciente = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  // 🔥 Conexión al backend real: POST /pacientes/crear/
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Paciente registrado correctamente (simulado)");
-    navigate("/secretaria/panel");
+
+    try {
+      const res = await fetch(`${API}/pacientes/crear/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert("Error al registrar paciente:\n" + JSON.stringify(data));
+        return;
+      }
+
+      alert("Paciente registrado correctamente");
+      navigate("/secretaria/pacientes");
+
+    } catch (error) {
+      console.error(error);
+      alert("Error de conexión con el servidor");
+    }
   };
 
   return (
@@ -69,7 +92,7 @@ const SecretariaRegistrarPaciente = () => {
   );
 };
 
-// Componente reutilizable
+// 🌟 Componente Input reutilizable (sin cambios en el diseño)
 const Input = ({ label, ...props }) => {
   return (
     <div className="flex flex-col">

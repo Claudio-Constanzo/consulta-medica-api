@@ -1,193 +1,186 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle } from "lucide-react";
-import Button from "../components/common/Button";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
     nombre: "",
     apellido: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const submit = async () => {
-      try {
-        const payload = {
-          nombre: formData.nombre,
-          apellido: formData.apellido,
-          correo: formData.email,
-          password: formData.password,
-        };
+    if (form.password !== form.confirmPassword) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
 
-        const res = await fetch("http://127.0.0.1:8000/registro/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+    try {
+      setLoading(true);
+      setError("");
 
-        if (res.ok) {
-          setShowSuccessModal(true);
-        } else {
-          const err = await res.json();
-          alert(
-            "Error al registrar: " + (err.detail || JSON.stringify(err))
-          );
-        }
-      } catch (error) {
-        console.error("Network error:", error);
-        alert("Error de red al contactar el servidor.");
+      const res = await fetch("http://127.0.0.1:8000/registro/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: form.nombre,
+          apellido: form.apellido,
+          email: form.email,
+          password: form.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.detail || "Error al registrar el usuario.");
+        return;
       }
-    };
 
-    submit();
+      // Opcional: guardar datos básicos y mandar directo al dashboard
+      localStorage.setItem("idUsuario", data.idUsuario);
+      localStorage.setItem("pacienteId", data.pacienteId ?? "");
+      localStorage.setItem("userName", data.nombre);
+      localStorage.setItem("userApellido", data.apellido);
+      localStorage.setItem("userEmail", data.email);
+
+      // Después de registrarse lo mandamos al login o al dashboard
+      navigate("/login");
+    } catch (err) {
+      console.error(err);
+      setError("No se pudo conectar con el servidor.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-amber-50/60 flex flex-col items-center justify-center p-4 relative">
-      {/* Volver */}
-      <div className="absolute top-20 left-4 md:left-8">
-        <Link
-          to="/"
-          className="flex items-center gap-2 text-stone-500 hover:text-stone-900 text-sm font-medium"
+    <div className="min-h-screen bg-amber-50/80 flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-lg border border-amber-100 p-8">
+        {/* Volver al home */}
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 text-sm text-stone-600 hover:text-stone-900 mb-4"
         >
-          <ArrowLeft size={18} />
-          Volver al inicio
-        </Link>
-      </div>
+          <ArrowLeft size={18} /> Volver al inicio
+        </button>
 
-      {/* Tarjeta */}
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-lg p-8 border border-amber-100">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-semibold text-stone-900">
-            Crear Cuenta
-          </h1>
-          <p className="text-stone-500 text-sm mt-1">
-            Regístrate para acceder a tu portal médico personal
-          </p>
-        </div>
+        <h1 className="text-2xl md:text-3xl font-semibold text-stone-900 text-center mb-2">
+          Crear Cuenta
+        </h1>
+        <p className="text-center text-stone-500 mb-6 text-sm">
+          Regístrate para acceder a tu portal médico personal.
+        </p>
 
-        {/* Pestañas */}
-        <div className="flex bg-amber-50 p-1 rounded-xl mb-6">
-          <Link
-            to="/login"
-            className="flex-1 py-2 text-sm font-semibold text-stone-500 hover:text-stone-900 text-center"
-          >
-            Iniciar Sesión
-          </Link>
-          <button className="flex-1 py-2 text-sm font-semibold bg-white text-stone-900 rounded-lg shadow-sm">
-            Registrarse
-          </button>
-        </div>
+        {error && (
+          <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+            {error}
+          </div>
+        )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-sm font-semibold text-stone-800 mb-1">
+            <label className="block text-sm font-medium text-stone-800 mb-1">
               Nombre
             </label>
             <input
-              type="text"
               name="nombre"
-              placeholder="Juan"
-              value={formData.nombre}
+              value={form.nombre}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-500/70 outline-none bg-amber-50/40"
-              required
+              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              placeholder="Ingrese nombre"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-stone-800 mb-1">
+            <label className="block text-sm font-medium text-stone-800 mb-1">
               Apellido
             </label>
             <input
-              type="text"
               name="apellido"
-              placeholder="Pérez"
-              value={formData.apellido}
+              value={form.apellido}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-500/70 outline-none bg-amber-50/40"
-              required
+              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              placeholder="Ingrese apellido"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-stone-800 mb-1">
-              Correo electrónico
+            <label className="block text-sm font-medium text-stone-800 mb-1">
+              Email
             </label>
             <input
               type="email"
               name="email"
-              placeholder="tu@correo.com"
-              value={formData.email}
+              value={form.email}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-500/70 outline-none bg-amber-50/40"
-              required
+              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              placeholder="correo@ejemplo.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-stone-800 mb-1">
+            <label className="block text-sm font-medium text-stone-800 mb-1">
               Contraseña
             </label>
             <input
               type="password"
               name="password"
-              placeholder="••••••••"
-              value={formData.password}
+              value={form.password}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-500/70 outline-none bg-amber-50/40"
-              required
+              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              placeholder="*******"
             />
           </div>
 
-          <Button type="submit" variant="primary" className="w-full py-3 mt-2">
-            Registrarse
-          </Button>
-        </form>
-      </div>
-
-      {/* Modal éxito */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center border border-amber-100">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-emerald-100 mb-6">
-              <CheckCircle className="h-10 w-10 text-emerald-600" />
-            </div>
-
-            <h3 className="text-2xl font-semibold text-stone-900 mb-2">
-              ¡Registro Exitoso!
-            </h3>
-            <p className="text-stone-500 mb-6">
-              Tu cuenta ha sido creada correctamente. Ahora puedes iniciar
-              sesión para acceder a la plataforma.
-            </p>
-
-            <Button
-              variant="primary"
-              className="w-full"
-              onClick={() => navigate("/login")}
-            >
-              Ir a Iniciar Sesión
-            </Button>
+          <div>
+            <label className="block text-sm font-medium text-stone-800 mb-1">
+              Confirmar Contraseña
+            </label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              placeholder="*******"
+            />
           </div>
-        </div>
-      )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-4 py-3 rounded-xl bg-stone-900 text-white font-semibold hover:bg-stone-800 transition disabled:opacity-70"
+          >
+            {loading ? "Registrando..." : "Registrarse"}
+          </button>
+        </form>
+
+        <p className="text-center text-sm text-stone-600 mt-4">
+          ¿Ya tienes una cuenta?{" "}
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="font-semibold text-stone-900 hover:underline"
+          >
+            Inicia sesión aquí
+          </button>
+        </p>
+      </div>
     </div>
   );
 };

@@ -1,7 +1,25 @@
 from django.db import models
-from django.utils import timezone
 
 # Create your models here.
+
+class Registro(models.Model):
+    nombre = models.CharField(max_length=50)
+    apellido = models.CharField(max_length=50)
+    email = models.EmailField(max_length=100, unique=True)
+    password_hash = models.CharField(max_length=255)
+
+class HoraAgendada(models.Model):
+    fecha = models.DateField()
+    hora_inicio = models.TimeField()
+    hora_final = models.TimeField()
+    paciente = models.CharField(max_length=50)
+    ESTADOS = [
+        ("reservada", "Reservada"),
+        ("cancelada", "Cancelada"),
+        ("completada", "Completada"),
+    ]
+    estado = models.CharField(max_length=20, choices=ESTADOS, default="reservada")
+
 class Paciente(models.Model):
     id_paciente = models.BigAutoField(primary_key=True)
     rut = models.CharField(max_length=15, unique=True, verbose_name="RUT")
@@ -25,22 +43,6 @@ class FichaMedica(models.Model):
     nombre_paciente = models.CharField(max_length=50, blank=True, null=True)
     apellido_paciente = models.CharField(max_length=50, blank=True, null=True)
     prevision_paciente = models.CharField(max_length=100, blank=True, null=True)
-
-
-class Usuario(models.Model):
-    nombre = models.CharField(max_length=50)
-    apellido = models.CharField(max_length=50)
-    email = models.EmailField(max_length=100, unique=True)
-    password_hash = models.CharField(max_length=255)
-    fecha_signup = models.DateTimeField(default=timezone.now)
-
-
-class HoraAgendada(models.Model):
-    fecha = models.DateField()
-    hora_inicio = models.TimeField()
-    hora_final = models.TimeField()
-    razon = models.CharField(max_length=300)
-
 
 class Secretaria(models.Model):
     rut_secretaria = models.CharField(max_length=15, unique=True)

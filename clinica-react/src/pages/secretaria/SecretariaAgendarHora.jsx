@@ -3,6 +3,33 @@ import { ArrowLeft, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 
+const API = "http://127.0.0.1:8000";
+
+const generarBloques30 = (inicio, fin, fechaStr) => {
+  const bloques = [];
+  let hora = new Date(inicio);
+
+  while (hora < fin) {
+    bloques.push(hora.toTimeString().slice(0, 5));
+    hora = new Date(hora.getTime() + 30 * 60000);
+  }
+  return bloques;
+};
+
+const generarHoras = (fechaStr) => {
+  const d = new Date(`${fechaStr}T00:00`);
+  const dia = d.getDay();
+
+  if (dia === 0 || dia === 6) return [];
+  if (dia >= 1 && dia <= 4)
+    return [
+      ...generarBloques30(new Date(`${fechaStr}T10:30`), new Date(`${fechaStr}T13:00`)),
+      ...generarBloques30(new Date(`${fechaStr}T15:00`), new Date(`${fechaStr}T19:00`)),
+    ];
+  if (dia === 5)
+    return generarBloques30(new Date(`${fechaStr}T10:30`), new Date(`${fechaStr}T13:00`));
+};
+
 const SecretariaAgendarHora = () => {
   const navigate = useNavigate();
 
@@ -13,77 +40,68 @@ const SecretariaAgendarHora = () => {
   const [horasDisponibles, setHorasDisponibles] = useState([]);
   const [horaSeleccionada, setHoraSeleccionada] = useState("");
 
-  const mockPacientes = {
-    "11.111.111-1": {
-      nombre: "John",
-      apellido: "Smith",
-      telefono: "+56 9 2345 6789",
-      direccion: "Avenida Central 123",
-    },
-    "22.222.222-2": {
-      nombre: "Ana",
-      apellido: "Torres",
-      telefono: "+56 9 9876 5432",
-      direccion: "Calle Norte 55",
-    },
-  };
-
-  const buscarPaciente = () => {
-    setPaciente(mockPacientes[rut] || null);
-    if (!mockPacientes[rut]) alert("Paciente no encontrado (mock)");
-  };
-
-  // GENERADOR DE HORAS (misma lógica que real)
-  const generarBloques30 = (inicio, fin, fechaStr) => {
-    const bloques = [];
-    let hora = new Date(inicio);
-
-    while (hora < fin) {
-      bloques.push(hora.toTimeString().slice(0, 5));
-      hora = new Date(hora.getTime() + 30 * 60000);
-    }
-    return bloques;
-  };
-
-  const generarHoras = (fechaStr) => {
-    const d = new Date(`${fechaStr}T00:00`);
-    const dia = d.getDay();
-
-    if (dia === 0 || dia === 6) return []; // sin atención
-
-    if (dia >= 1 && dia <= 4) {
-      return [
-        ...generarBloques30(new Date(`${fechaStr}T10:30`), new Date(`${fechaStr}T13:00`)),
-        ...generarBloques30(new Date(`${fechaStr}T15:00`), new Date(`${fechaStr}T19:00`)),
-      ];
-    }
-
-    if (dia === 5) {
-      return [...generarBloques30(new Date(`${fechaStr}T10:30`), new Date(`${fechaStr}T13:00`))];
+  const buscarPaciente = async () => {
+    try {
+      const res = await fetch(`${API}/pacientes/${rut}/`);
+      if (!res.ok) {
+        setPaciente(null);
+        alert("Paciente no encontrado");
+        return;
+      }
+      setPaciente(await res.json());
+    } catch {
+      alert("Error buscando paciente");
     }
   };
-
-  // MOCK de horas ocupadas
-  const mockOcupadas = ["10:30", "15:30"];
 
   useEffect(() => {
-    if (!fecha) return;
-    const all = generarHoras(fecha);
-    setHorasDisponibles(all.filter((h) => !mockOcupadas.includes(h)));
+    const cargar = async () => {
+      if (!fecha) return;
+
+      const bloques = generarHoras(fecha);
+      if (!bloques) return;
+
+      const res = await fetch(`${API}/horas/agenda-doctor/?fecha=${fecha}`);
+      const ocupadas = await res.json();
+
+      const disponibles = bloques.filter(
+        (b) => !ocupadas.some((o) => o.hora_inicio.startsWith(b))
+      );
+
+      setHorasDisponibles(disponibles);
+    };
+
+    cargar();
   }, [fecha]);
 
-  const guardarCita = () => {
-    alert(
-      `Cita guardada (mock):
-Paciente: ${paciente?.nombre} ${paciente?.apellido}
-Fecha: ${fecha}
-Hora: ${horaSeleccionada}`
-    );
-    navigate("/secretaria/panel");
+  const guardarCita = async () => {
+    if (!paciente || !fecha || !horaSeleccionada) {
+      alert("Debe completar todos los campos");
+      return;
+    }
+
+    const res = await fetch(`${API}/horas/agendar/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fecha,
+        hora_inicio: horaSeleccionada,
+        paciente: `${paciente.nombre} ${paciente.apellido}`,
+      }),
+    });
+
+    if (!res.ok) {
+      alert("Error al guardar cita");
+      return;
+    }
+
+    alert("Cita agendada correctamente");
+    navigate("/secretaria/agenda-doctor");
   };
 
   return (
     <div className="min-h-screen bg-amber-50/60 p-6">
+
       <button
         onClick={() => navigate("/secretaria/panel")}
         className="flex items-center gap-2 text-stone-600 hover:text-stone-900 mb-6"
