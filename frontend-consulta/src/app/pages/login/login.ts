@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
-
+import { rutValidator } from '../registro/registro';
 import { ApiService } from '../../services/api';
 
 @Component({
