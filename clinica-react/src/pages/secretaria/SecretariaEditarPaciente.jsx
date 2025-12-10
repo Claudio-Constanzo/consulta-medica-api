@@ -3,45 +3,43 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../../components/common/Button";
 
+const API = "http://127.0.0.1:8000";
+
 const SecretariaEditarPaciente = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // aquí usamos rut como param
   const navigate = useNavigate();
 
   const [paciente, setPaciente] = useState(null);
 
-  const mockPacientes = {
-    1: {
-      nombre: "John",
-      apellido: "Smith",
-      correo: "john.smith@gmail.com",
-      direccion: "Avenida Central 123",
-      telefono: "+56 9 2345 6789",
-      prevision: "Fonasa",
-    },
-    2: {
-      nombre: "Ana",
-      apellido: "Torres",
-      correo: "ana.torres@gmail.com",
-      direccion: "Calle Norte 55",
-      telefono: "+56 9 9876 5432",
-      prevision: "Isapre Colmena",
-    },
-  };
-
+  // 🔥 Cargar paciente real
   useEffect(() => {
-    // ❌ fetch desactivado
-    // const res = await fetch ...
-
-    // ✔ set mock
-    setPaciente(mockPacientes[id]);
+    const cargar = async () => {
+      const res = await fetch(`${API}/pacientes/${id}/`);
+      const data = await res.json();
+      setPaciente(data);
+    };
+    cargar();
   }, [id]);
 
   const handleChange = (e) => {
     setPaciente({ ...paciente, [e.target.name]: e.target.value });
   };
 
-  const guardarCambios = () => {
-    alert("Paciente actualizado (simulado)");
+  const guardarCambios = async () => {
+    const res = await fetch(`${API}/pacientes/editar/${id}/`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(paciente),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert("Error actualizando paciente:\n" + JSON.stringify(data));
+      return;
+    }
+
+    alert("Paciente actualizado correctamente");
     navigate("/secretaria/pacientes");
   };
 
@@ -64,14 +62,14 @@ const SecretariaEditarPaciente = () => {
         </h1>
 
         <div className="space-y-4">
-          {["nombre", "apellido", "correo", "direccion", "telefono", "prevision"].map((f) => (
+          {["nombre", "apellido", "email", "direccion", "telefono", "prevision"].map((f) => (
             <div key={f}>
               <label className="font-semibold text-stone-800 mb-1 block">
                 {f.charAt(0).toUpperCase() + f.slice(1)}
               </label>
               <input
                 name={f}
-                value={paciente[f]}
+                value={paciente[f] ?? ""}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-lg"
               />

@@ -1,11 +1,5 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Calendar,
-  FileText,
-  Users,
-  LogOut,
-} from "lucide-react";
+import { Calendar, FileText, Users, LogOut } from "lucide-react";
 import DashboardCard from "../../components/common/DashboardCard";
 
 const DoctorPanel = () => {
@@ -21,7 +15,6 @@ const DoctorPanel = () => {
 
   return (
     <main className="min-h-screen bg-amber-50/40 px-6 py-8">
-
       {/* Logout arriba derecha */}
       <div className="flex justify-end mb-6">
         <button
@@ -37,13 +30,10 @@ const DoctorPanel = () => {
       <h1 className="text-3xl font-semibold text-stone-900">
         Buenos días, Dr. {nombre} {apellido}
       </h1>
-      <p className="text-stone-500 mb-10">
-        Panel de Gestión Médica
-      </p>
+      <p className="text-stone-500 mb-10">Panel de Gestión Médica</p>
 
-      {/* Tarjetas del panel (igual que PowerFit pero versión clínica) */}
+      {/* Tarjetas del panel */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
         <DashboardCard
           Icon={Calendar}
           title="Agenda"
@@ -67,7 +57,6 @@ const DoctorPanel = () => {
           buttonText="Ver Pacientes"
           to="/doctor/pacientes"
         />
-
       </section>
     </main>
   );

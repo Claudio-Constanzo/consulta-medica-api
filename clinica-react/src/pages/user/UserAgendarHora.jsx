@@ -3,57 +3,86 @@ import { ArrowLeft, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 
+const API = "http://127.0.0.1:8000";
+
+const generar = (inicio, fin, fechaStr) => {
+  const arr = [];
+  let h = new Date(inicio);
+  while (h < fin) {
+    arr.push(h.toTimeString().slice(0, 5));
+    h = new Date(h.getTime() + 30 * 60000);
+  }
+  return arr;
+};
+
+const generarHoras = (fechaStr) => {
+  const d = new Date(`${fechaStr}T00:00`);
+  const dia = d.getDay();
+
+  if (dia === 0 || dia === 6) return [];
+  if (dia >= 1 && dia <= 4)
+    return [
+      ...generar(new Date(`${fechaStr}T10:30`), new Date(`${fechaStr}T13:00`)),
+      ...generar(new Date(`${fechaStr}T15:00`), new Date(`${fechaStr}T19:00`)),
+    ];
+  if (dia === 5)
+    return generar(new Date(`${fechaStr}T10:30`), new Date(`${fechaStr}T13:00`));
+};
+
 const UserAgendarHora = () => {
   const navigate = useNavigate();
 
-  const pacienteNombre = localStorage.getItem("userName") || "Paciente";
-  const pacienteApellido = localStorage.getItem("userApellido") || "";
+  const nombre = localStorage.getItem("userName");
+  const apellido = localStorage.getItem("userApellido");
+  const rut = localStorage.getItem("userRut");
 
   const [fecha, setFecha] = useState("");
   const [horasDisponibles, setHorasDisponibles] = useState([]);
   const [horaSeleccionada, setHoraSeleccionada] = useState("");
 
-  // HORARIO 30 MIN
-  const generar = (inicio, fin, fechaStr) => {
-    const arr = [];
-    let h = new Date(inicio);
-    while (h < fin) {
-      arr.push(h.toTimeString().slice(0, 5));
-      h = new Date(h.getTime() + 30 * 60000);
-    }
-    return arr;
-  };
-
-  const generarHoras = (fechaStr) => {
-    const d = new Date(`${fechaStr}T00:00`);
-    const dia = d.getDay();
-
-    if (dia === 0 || dia === 6) return [];
-
-    if (dia >= 1 && dia <= 4) {
-      return [
-        ...generar(new Date(`${fechaStr}T10:30`), new Date(`${fechaStr}T13:00`)),
-        ...generar(new Date(`${fechaStr}T15:00`), new Date(`${fechaStr}T19:00`)),
-      ];
-    }
-
-    if (dia === 5) {
-      return [...generar(new Date(`${fechaStr}T10:30`), new Date(`${fechaStr}T13:00`))];
-    }
-  };
-
-  const mockOcupadas = ["10:30", "15:30"];
-
   useEffect(() => {
-    if (!fecha) return;
-    const all = generarHoras(fecha);
-    setHorasDisponibles(all.filter((h) => !mockOcupadas.includes(h)));
+    const cargar = async () => {
+      if (!fecha) return;
+
+      const horas = generarHoras(fecha);
+      if (!horas) return;
+
+      const res = await fetch(`${API}/horas/agenda-doctor/?fecha=${fecha}`);
+      const ocupadas = await res.json();
+
+      const lista = horas.filter(
+        (h) => !ocupadas.some((o) => o.hora_inicio.startsWith(h))
+      );
+
+      setHorasDisponibles(lista);
+    };
+
+    cargar();
   }, [fecha]);
 
-  const reservar = () => {
-    alert(`Cita agendada (mock):
-${pacienteNombre} ${pacienteApellido}
-${fecha} — ${horaSeleccionada}`);
+  const reservar = async () => {
+    if (!horaSeleccionada) {
+      alert("Debe seleccionar una hora");
+      return;
+    }
+
+    const res = await fetch(`${API}/horas/agendar/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fecha,
+        hora_inicio: horaSeleccionada,
+        paciente: `${nombre} ${apellido}`,
+        rut_paciente: rut,
+      }),
+    });
+
+    if (!res.ok) {
+      alert("No se pudo reservar la hora");
+      return;
+    }
+
+    alert("Hora reservada correctamente");
     navigate("/user/citas");
   };
 

@@ -3,42 +3,38 @@ import { ArrowLeft, FileText, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 
+const API_BASE = "http://127.0.0.1:8000";
+
 const DoctorFichas = () => {
   const navigate = useNavigate();
   const [fichas, setFichas] = useState([]);
   const [search, setSearch] = useState("");
-
-  const mockFichas = [
-    {
-      id: 1,
-      paciente: "John Smith",
-      diagnostico: "Faringitis aguda",
-      fecha: "2025-01-15",
-    },
-    {
-      id: 2,
-      paciente: "Ana Torres",
-      diagnostico: "Alergia estacional",
-      fecha: "2025-01-14",
-    },
-    {
-      id: 3,
-      paciente: "Carlos Pérez",
-      diagnostico: "Sinusitis leve",
-      fecha: "2025-01-10",
-    },
-  ];
+  const [loading, setLoading] = useState(false);
 
   const fetchFichas = async () => {
-    // ❌ Fetch desactivado temporalmente
-    // try {
-    //   const res = await fetch("http://127.0.0.1:8000/fichas/");
-    //   const data = await res.json();
-    //   setFichas(data);
-    // } catch {}
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/fichas/`);
+      if (!res.ok) throw new Error("Error HTTP");
+      const data = await res.json();
 
-    // ✔ mock realista
-    setFichas(mockFichas);
+      // Adaptar los datos del backend al formato que usamos en la tabla
+      const adaptadas = (data || []).map((f) => ({
+        id: f.id_ficha,
+        paciente: `${f.nombre_paciente || ""} ${f.apellido_paciente || ""}`.trim(),
+        diagnostico: f.titulo,
+        fecha: f.hora_ficha
+          ? new Date(f.hora_ficha).toLocaleString("es-CL")
+          : "",
+      }));
+
+      setFichas(adaptadas);
+    } catch (e) {
+      console.error("Error cargando fichas:", e);
+      alert("No se pudieron cargar las fichas médicas.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -51,7 +47,6 @@ const DoctorFichas = () => {
 
   return (
     <div className="min-h-screen bg-amber-50/60 p-6">
-
       <button
         onClick={() => navigate("/doctor/panel")}
         className="flex items-center gap-2 text-stone-600 hover:text-stone-900 mb-6"
@@ -74,24 +69,26 @@ const DoctorFichas = () => {
         <Search size={18} className="text-stone-600" />
         <input
           type="text"
-          placeholder="Buscar paciente..."
+          placeholder="Buscar paciente."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full ml-3 bg-transparent focus:outline-none text-stone-700"
         />
       </div>
 
-      {/* Tabla mock */}
+      {/* Tabla */}
       <div className="bg-white rounded-2xl shadow p-6 border border-amber-100">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <p className="text-stone-500">Cargando fichas...</p>
+        ) : filtered.length === 0 ? (
           <p className="text-stone-500">No hay fichas.</p>
         ) : (
           <table className="w-full text-sm">
             <thead className="border-b text-stone-600">
               <tr>
-                <th className="py-2">Paciente</th>
-                <th>Diagnóstico</th>
-                <th>Fecha</th>
+                <th className="py-2 text-left">Paciente</th>
+                <th className="text-left">Diagnóstico</th>
+                <th className="text-left">Fecha</th>
               </tr>
             </thead>
 
@@ -101,7 +98,7 @@ const DoctorFichas = () => {
                   key={f.id}
                   className="border-b border-amber-50 hover:bg-amber-50/40"
                 >
-                  <td className="py-3">{f.paciente}</td>
+                  <td className="py-3">{f.paciente || "Sin nombre"}</td>
                   <td>{f.diagnostico}</td>
                   <td>{f.fecha}</td>
                 </tr>

@@ -2,45 +2,66 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, XCircle, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+const API = "http://127.0.0.1:8000";
+
 const UserCitas = () => {
   const navigate = useNavigate();
 
+  // 🔥 Usamos rut, porque el backend espera rut en la URL
+  const rut = localStorage.getItem("userRut");
+
   const [citas, setCitas] = useState([]);
 
-  const mockCitas = [
-    {
-      id: 1,
-      fecha: "2025-01-20",
-      hora: "10:30",
-      motivo: "Control general",
-    },
-    {
-      id: 2,
-      fecha: "2025-01-22",
-      hora: "11:00",
-      motivo: "Dolor de garganta",
-    },
-  ];
+  const cargarCitas = async () => {
+    if (!rut) {
+      console.error("No hay RUT guardado en localStorage");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/horas/paciente/${rut}/`);
+
+      if (!res.ok) {
+        console.error("Error HTTP", res.status);
+        return;
+      }
+
+      const data = await res.json();
+      setCitas(data);
+
+    } catch (error) {
+      console.error("ERROR al cargar citas:", error);
+      alert("No se pudieron cargar las citas.");
+    }
+  };
 
   useEffect(() => {
-    // ❌ Backend desactivado
-    // const res = await fetch("...")
-
-    // ✔ Mock
-    setCitas(mockCitas);
+    cargarCitas();
   }, []);
 
-  const cancelarCita = (id) => {
-    const confirmado = confirm("¿Deseas cancelar esta cita?");
-    if (!confirmado) return;
+  const cancelarCita = async (id) => {
+    if (!confirm("¿Deseas cancelar esta cita?")) return;
 
-    setCitas((prev) => prev.filter((c) => c.id !== id));
-    alert("Cita cancelada (modo simulación).");
+    try {
+      const res = await fetch(`${API}/horas/cancelar/${id}/`, {
+        method: "PUT",
+      });
+
+      if (!res.ok) {
+        alert("Error cancelando cita");
+        return;
+      }
+
+      alert("Cita cancelada correctamente");
+      cargarCitas();
+
+    } catch (error) {
+      alert("Error de conexión al cancelar la cita");
+    }
   };
 
   return (
     <div className="min-h-screen bg-amber-50/60 p-6">
-
       <button
         onClick={() => navigate("/user/dashboard")}
         className="flex items-center gap-2 mb-6 text-stone-600 hover:text-stone-900"
@@ -57,28 +78,24 @@ const UserCitas = () => {
           <p className="text-stone-600">No tienes citas agendadas.</p>
         ) : (
           citas.map((c) => (
-            <div
-              key={c.id}
-              className="bg-white p-4 rounded-xl border border-amber-100 shadow flex justify-between items-center"
-            >
+            <div key={c.id} className="bg-white p-4 rounded-xl border shadow flex justify-between">
               <div>
-                <p className="font-semibold text-stone-900">
-                  {c.fecha} — {c.hora}
-                </p>
-                <p className="text-stone-700">{c.motivo}</p>
+                <p className="font-semibold">{c.fecha} — {c.hora_inicio}</p>
+                <p className="text-stone-700">{c.estado}</p>
               </div>
 
-              <button
-                className="flex items-center gap-2 text-red-600 hover:text-red-800"
-                onClick={() => cancelarCita(c.id)}
-              >
-                <XCircle size={20} /> Cancelar
-              </button>
+              {c.estado !== "cancelada" && (
+                <button
+                  className="flex items-center gap-2 text-red-600"
+                  onClick={() => cancelarCita(c.id)}
+                >
+                  <XCircle size={20} /> Cancelar
+                </button>
+              )}
             </div>
           ))
         )}
       </div>
-
     </div>
   );
 };
