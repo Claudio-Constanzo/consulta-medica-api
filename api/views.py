@@ -19,25 +19,57 @@ def listar_pacientes(request):
 
 @api_view(["GET"])
 def buscar_paciente_por_rut(request, rut):
-    paciente = get_object_or_404(Paciente, rut=rut)
-    serializer = PacienteSerializer(paciente)
-    return Response(serializer.data)
+    rut_normalizado = rut.replace(".", "").replace("-", "").strip().upper()
+    pacientes = Paciente.objects.all()
+
+    for p in pacientes:
+        rut_bd = p.rut.replace(".", "").replace("-", "").strip().upper()
+        if rut_bd == rut_normalizado:
+            serializer = PacienteSerializer(p)
+            return Response(serializer.data, status=200)
+
+    return Response({"detail": "Paciente no encontrado."}, status=404)
 
 
-@api_view(["POST"])
+@api_view(['GET', 'POST'])
 def crear_paciente(request):
-    serializer = PacienteSerializer(data=request.data)
+    rut = request.data.get("rut")
+    nombre = request.data.get("nombre")
+    apellido = request.data.get("apellido")
+    telefono = request.data.get("telefono")
+    direccion = request.data.get("direccion")
+    prevision = request.data.get("prevision")
+    usuario_id = request.data.get("usuarioId")
 
-    if serializer.is_valid():
-        paciente = serializer.save()
+    if usuario_id is None and rut:
+        if Registro.objects.filter(rut=rut).exists():
+            return Response(
+                {"detail": "Este RUT pertenece a un usuario registrado. Use la búsqueda por RUT."},
+                status=400
+            )
+
+    if rut and Paciente.objects.filter(rut=rut).exists():
         return Response(
-            {
-                "message": "Paciente creado correctamente",
-                "data": PacienteSerializer(paciente).data,
-            }
+            {"detail": "Paciente con este RUT ya existe."},
+            status=400
         )
 
-    return Response(serializer.errors, status=400)
+    paciente = Paciente.objects.create(
+        rut=rut if rut else None,
+        nombre=nombre,
+        apellido=apellido,
+        telefono=telefono,
+        direccion=direccion,
+        prevision=prevision,
+        usuarios_id_usuario=usuario_id
+    )
+
+    return Response({
+        "id_paciente": paciente.id_paciente,
+        "nombre": paciente.nombre,
+        "apellido": paciente.apellido
+    }, status=201)
+
 
 
 @api_view(["PUT", "PATCH"])
@@ -179,50 +211,64 @@ def crear_registro(request):
     return Response(serializer.errors, status=400)
 
 
-@api_view(["POST"])
+@api_view(["GET", "POST"])
 def registro_usuario(request):
-    nombre = request.data.get("nombre")
-    apellido = request.data.get("apellido")
-    email = request.data.get("email")
-    password = request.data.get("password")
+    if request.method == "GET":
+        user_id = request.query_params.get("id", None)
 
-    if not all([nombre, apellido, email, password]):
-        return Response(
-            {"detail": "Faltan datos obligatorios."},
-            status=status.HTTP_400_BAD_REQUEST,
+        if user_id:
+            try:
+                registro = Registro.objects.get(id=user_id)
+                return Response({
+                    "idUsuario": registro.id,
+                    "nombre": registro.nombre,
+                    "apellido": registro.apellido,
+                    "rut": registro.rut,
+                    "email": registro.email,
+                })
+            except Registro.DoesNotExist:
+                return Response({"detail": "Usuario no encontrado."}, status=404)
+
+        registros = Registro.objects.all().values(
+            "id", "nombre", "apellido", "rut", "email"
+        )
+        return Response(list(registros))
+
+    if request.method == "POST":
+        nombre = request.data.get("nombre")
+        apellido = request.data.get("apellido")
+        rut = request.data.get("rut")
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        if not all([nombre, apellido, rut, email, password]):
+            return Response({"detail": "Faltan datos obligatorios."}, status=400)
+
+        if Registro.objects.filter(email=email).exists():
+            return Response({"detail": "Correo ya registrado."}, status=400)
+
+        if Registro.objects.filter(rut=rut).exists():
+            return Response({"detail": "RUT ya registrado."}, status=400)
+
+        registro = Registro.objects.create(
+            nombre=nombre,
+            apellido=apellido,
+            rut=rut,
+            email=email,
+            password_hash=make_password(password)
         )
 
-    if Registro.objects.filter(email=email).exists():
         return Response(
-            {"detail": "Ya existe un usuario con ese correo."},
-            status=status.HTTP_400_BAD_REQUEST,
+            {
+                "idUsuario": registro.id,
+                "nombre": registro.nombre,
+                "apellido": registro.apellido,
+                "email": registro.email,
+                "rut": registro.rut,
+                "pacienteId": None,
+            },
+            status=201,
         )
-    registro = Registro.objects.create(
-        nombre=nombre,
-        apellido=apellido,
-        email=email,
-        password_hash=make_password(password),
-    )
-    paciente = Paciente.objects.create(
-        rut="",
-        nombre=nombre,
-        apellido=apellido,
-        email=email,
-        direccion="",
-        telefono="",
-        prevision="",
-        usuarios_id_usuario=registro.id,
-    )
-    return Response(
-        {
-            "idUsuario": registro.id,
-            "pacienteId": paciente.id_paciente,
-            "nombre": registro.nombre,
-            "apellido": registro.apellido,
-            "email": registro.email,
-        },
-        status=status.HTTP_201_CREATED,
-    )
 
 
 @api_view(["POST"])
@@ -230,47 +276,95 @@ def login_usuario(request):
     email = request.data.get("email")
     password = request.data.get("password")
 
-    if not all([email, password]):
-        return Response(
-            {"detail": "Debe enviar email y contraseña."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
     try:
         registro = Registro.objects.get(email=email)
     except Registro.DoesNotExist:
-        return Response(
-            {"detail": "Credenciales inválidas."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        return Response({"detail": "Credenciales inválidas."}, status=400)
 
     if not check_password(password, registro.password_hash):
-        return Response(
-            {"detail": "Credenciales inválidas."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        return Response({"detail": "Credenciales inválidas."}, status=400)
 
     paciente = Paciente.objects.filter(usuarios_id_usuario=registro.id).first()
 
-    if paciente is None:
-        paciente = Paciente.objects.create(
-            rut="",
-            nombre=registro.nombre,
-            apellido=registro.apellido,
-            email=registro.email,
-            direccion="",
-            telefono="",
-            prevision="",
-            usuarios_id_usuario=registro.id,
-        )
+    return Response({
+        "idUsuario": registro.id,
+        "pacienteId": getattr(paciente, "id_paciente", None),
+        "nombre": registro.nombre,
+        "apellido": registro.apellido,
+        "email": registro.email,
+    }, status=200)
 
-    return Response(
-        {
-            "idUsuario": registro.id,
-            "pacienteId": paciente.id_paciente, 
-            "nombre": registro.nombre,
-            "apellido": registro.apellido,
-            "email": registro.email,
-        },
-        status=status.HTTP_200_OK,
+
+@api_view(["GET"])
+def horas_por_usuario(request, usuario_id):
+    horas = HoraAgendada.objects.filter(usuario_id=usuario_id).order_by("fecha", "hora_inicio")
+    serializer = HoraAgendadaSerializer(horas, many=True)
+    return Response(serializer.data, status=200)
+
+
+@api_view(["GET"])
+def fichas_por_usuario(request, usuario_id):
+    fichas = FichaMedica.objects.filter(usuarios_id_usuario=usuario_id).order_by("-hora_ficha")
+    serializer = FichaMedicaSerializer(fichas, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+@api_view(["POST"])
+def crear_hora_usuario(request):
+    usuario_id = request.data.get("usuario_id")
+    fecha = request.data.get("fecha")
+    hora_inicio = request.data.get("hora_inicio")
+    hora_final = request.data.get("hora_final")
+    estado = "reservada"
+
+    nueva = HoraAgendada.objects.create(
+        usuario_id=usuario_id,
+        fecha=fecha,
+        hora_inicio=hora_inicio,
+        hora_final=hora_final,
+        estado=estado,
+        paciente="",  
     )
+
+    serializer = HoraAgendadaSerializer(nueva)
+    return Response(serializer.data, status=201)
+
+
+@api_view(["PUT"])
+def cancelar_hora(request, id_hora):
+    try:
+        hora = HoraAgendada.objects.get(id=id_hora)
+    except HoraAgendada.DoesNotExist:
+        return Response({"detail": "Hora no encontrada"}, status=404)
+
+    hora.estado = "cancelada"
+    hora.save()
+    return Response({"detail": "Cita cancelada"}, status=200)
+
+
+@api_view(["GET"])
+def buscar_usuario_por_rut(request, rut):
+    rut_normalizado = rut.replace(".", "").replace("-", "").strip().upper()
+
+    registros = Registro.objects.all()
+    registro = None
+
+    for r in registros:
+        rut_bd = r.rut.replace(".", "").replace("-", "").strip().upper()
+        if rut_bd == rut_normalizado:
+            registro = r
+            break
+
+    if not registro:
+        return Response({"detail": "Usuario no encontrado."}, status=404)
+
+    return Response({
+        "idUsuario": registro.id,
+        "nombre": registro.nombre,
+        "apellido": registro.apellido,
+        "email": registro.email,
+        "rut": registro.rut,
+    })
+
 

@@ -8,6 +8,7 @@ const Register = () => {
   const [form, setForm] = useState({
     nombre: "",
     apellido: "",
+    rut: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -39,6 +40,7 @@ const Register = () => {
         body: JSON.stringify({
           nombre: form.nombre,
           apellido: form.apellido,
+          rut: form.rut,
           email: form.email,
           password: form.password,
         }),
@@ -51,15 +53,17 @@ const Register = () => {
         return;
       }
 
-      // Opcional: guardar datos básicos y mandar directo al dashboard
+      // Guardamos datos del usuario
       localStorage.setItem("idUsuario", data.idUsuario);
+      localStorage.setItem("userRut", data.rut);
       localStorage.setItem("pacienteId", data.pacienteId ?? "");
       localStorage.setItem("userName", data.nombre);
       localStorage.setItem("userApellido", data.apellido);
       localStorage.setItem("userEmail", data.email);
 
-      // Después de registrarse lo mandamos al login o al dashboard
+      // Después de registrarse lo enviamos al login
       navigate("/login");
+
     } catch (err) {
       console.error(err);
       setError("No se pudo conectar con el servidor.");
@@ -71,6 +75,7 @@ const Register = () => {
   return (
     <div className="min-h-screen bg-amber-50/80 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-lg border border-amber-100 p-8">
+
         {/* Volver al home */}
         <button
           onClick={() => navigate("/")}
@@ -93,6 +98,7 @@ const Register = () => {
         )}
 
         <form className="space-y-4" onSubmit={handleSubmit}>
+          {/* Nombre */}
           <div>
             <label className="block text-sm font-medium text-stone-800 mb-1">
               Nombre
@@ -101,11 +107,12 @@ const Register = () => {
               name="nombre"
               value={form.nombre}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-amber-500"
               placeholder="Ingrese nombre"
             />
           </div>
 
+          {/* Apellido */}
           <div>
             <label className="block text-sm font-medium text-stone-800 mb-1">
               Apellido
@@ -114,11 +121,26 @@ const Register = () => {
               name="apellido"
               value={form.apellido}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-amber-500"
               placeholder="Ingrese apellido"
             />
           </div>
 
+          {/* RUT */}
+          <div>
+            <label className="block text-sm font-medium text-stone-800 mb-1">
+              RUT
+            </label>
+            <input
+              name="rut"
+              value={form.rut}
+              onChange={handleChange}
+              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-amber-500"
+              placeholder="11.111.111-1"
+            />
+          </div>
+
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-stone-800 mb-1">
               Email
@@ -128,11 +150,12 @@ const Register = () => {
               name="email"
               value={form.email}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-amber-500"
               placeholder="correo@ejemplo.com"
             />
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-stone-800 mb-1">
               Contraseña
@@ -142,11 +165,12 @@ const Register = () => {
               name="password"
               value={form.password}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-amber-500"
               placeholder="*******"
             />
           </div>
 
+          {/* Confirm Password */}
           <div>
             <label className="block text-sm font-medium text-stone-800 mb-1">
               Confirmar Contraseña
@@ -156,11 +180,12 @@ const Register = () => {
               name="confirmPassword"
               value={form.confirmPassword}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-amber-500"
               placeholder="*******"
             />
           </div>
 
+          {/* Submit */}
           <button
             type="submit"
             disabled={loading}

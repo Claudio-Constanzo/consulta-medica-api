@@ -5,64 +5,60 @@ import Button from "../../components/common/Button";
 
 const API = "http://127.0.0.1:8000";
 
-const generar = (inicio, fin, fechaStr) => {
-  const arr = [];
-  let h = new Date(inicio);
-  while (h < fin) {
-    arr.push(h.toTimeString().slice(0, 5));
-    h = new Date(h.getTime() + 30 * 60000);
-  }
-  return arr;
-};
-
-const generarHoras = (fechaStr) => {
-  const d = new Date(`${fechaStr}T00:00`);
-  const dia = d.getDay();
-
-  if (dia === 0 || dia === 6) return [];
-  if (dia >= 1 && dia <= 4)
-    return [
-      ...generar(new Date(`${fechaStr}T10:30`), new Date(`${fechaStr}T13:00`)),
-      ...generar(new Date(`${fechaStr}T15:00`), new Date(`${fechaStr}T19:00`)),
-    ];
-  if (dia === 5)
-    return generar(new Date(`${fechaStr}T10:30`), new Date(`${fechaStr}T13:00`));
-};
-
 const UserAgendarHora = () => {
   const navigate = useNavigate();
-
-  const nombre = localStorage.getItem("userName");
-  const apellido = localStorage.getItem("userApellido");
-  const rut = localStorage.getItem("userRut");
+  const usuarioId = localStorage.getItem("idUsuario");
 
   const [fecha, setFecha] = useState("");
   const [horasDisponibles, setHorasDisponibles] = useState([]);
   const [horaSeleccionada, setHoraSeleccionada] = useState("");
 
+  // Generador de bloques
+  const generar = (inicio, fin) => {
+    const arr = [];
+    let h = new Date(inicio);
+    while (h < fin) {
+      arr.push(h.toTimeString().slice(0, 5));
+      h = new Date(h.getTime() + 30 * 60000);
+    }
+    return arr;
+  };
+
+  const generarHoras = (fechaStr) => {
+    const d = new Date(`${fechaStr}T00:00`);
+    const dia = d.getDay();
+
+    if (dia === 0 || dia === 6) return [];
+
+    if (dia >= 1 && dia <= 4) {
+      return [
+        ...generar(`${fechaStr}T10:30`, `${fechaStr}T13:00`),
+        ...generar(`${fechaStr}T15:00`, `${fechaStr}T19:00`),
+      ];
+    }
+
+    if (dia === 5) {
+      return generar(`${fechaStr}T10:30`, `${fechaStr}T13:00`);
+    }
+  };
+
   useEffect(() => {
-    const cargar = async () => {
-      if (!fecha) return;
+    if (!fecha) return;
+    const all = generarHoras(fecha);
 
-      const horas = generarHoras(fecha);
-      if (!horas) return;
-
-      const res = await fetch(`${API}/horas/agenda-doctor/?fecha=${fecha}`);
+    const cargarOcupadas = async () => {
+      const res = await fetch(`${API}/horas-ocupadas/?fecha=${fecha}`);
       const ocupadas = await res.json();
 
-      const lista = horas.filter(
-        (h) => !ocupadas.some((o) => o.hora_inicio.startsWith(h))
-      );
-
-      setHorasDisponibles(lista);
+      setHorasDisponibles(all.filter(h => !ocupadas.includes(h)));
     };
 
-    cargar();
+    cargarOcupadas();
   }, [fecha]);
 
   const reservar = async () => {
-    if (!horaSeleccionada) {
-      alert("Debe seleccionar una hora");
+    if (!fecha || !horaSeleccionada) {
+      alert("Seleccione fecha y hora");
       return;
     }
 
@@ -70,25 +66,25 @@ const UserAgendarHora = () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        usuario_id: usuarioId,
         fecha,
         hora_inicio: horaSeleccionada,
-        paciente: `${nombre} ${apellido}`,
-        rut_paciente: rut,
+        hora_final: horaSeleccionada,
       }),
     });
 
     if (!res.ok) {
-      alert("No se pudo reservar la hora");
+      alert("Error al agendar hora");
       return;
     }
 
-    alert("Hora reservada correctamente");
+    alert("Hora agendada correctamente");
     navigate("/user/citas");
   };
 
   return (
     <div className="min-h-screen bg-amber-50/60 p-6">
-      
+
       <button
         onClick={() => navigate("/user/dashboard")}
         className="flex items-center gap-2 text-stone-600 hover:text-stone-900 mb-6"
@@ -96,7 +92,7 @@ const UserAgendarHora = () => {
         <ArrowLeft size={20} /> Volver
       </button>
 
-      <h1 className="text-3xl font-semibold flex items-center gap-2 text-stone-900 mb-6">
+      <h1 className="text-3xl font-semibold flex items-center gap-2 mb-6">
         <Clock className="text-amber-700" /> Agendar Hora Médica
       </h1>
 
@@ -113,17 +109,16 @@ const UserAgendarHora = () => {
         {fecha && (
           <>
             <h2 className="font-semibold mb-3">Horas Disponibles</h2>
-
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-              {horasDisponibles.map((h) => (
+              {horasDisponibles.map(h => (
                 <button
                   key={h}
-                  className={`px-4 py-2 rounded-lg border ${
-                    horaSeleccionada === h
-                      ? "bg-amber-600 text-white"
-                      : "bg-white text-stone-800 border-amber-200 hover:bg-amber-100"
-                  }`}
                   onClick={() => setHoraSeleccionada(h)}
+                  className={
+                    horaSeleccionada === h
+                      ? "px-4 py-2 rounded-lg bg-amber-600 text-white"
+                      : "px-4 py-2 rounded-lg border border-amber-200 hover:bg-amber-100"
+                  }
                 >
                   {h}
                 </button>
@@ -133,7 +128,7 @@ const UserAgendarHora = () => {
         )}
 
         <Button variant="primary" className="w-full" onClick={reservar}>
-          Reservar Hora
+          Agendar Hora
         </Button>
       </div>
     </div>

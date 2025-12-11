@@ -7,30 +7,24 @@ const API = "http://127.0.0.1:8000";
 const UserCitas = () => {
   const navigate = useNavigate();
 
-  // 🔥 Usamos rut, porque el backend espera rut en la URL
-  const rut = localStorage.getItem("userRut");
-
+  const usuarioId = localStorage.getItem("idUsuario");
   const [citas, setCitas] = useState([]);
 
   const cargarCitas = async () => {
-    if (!rut) {
-      console.error("No hay RUT guardado en localStorage");
-      return;
-    }
+    if (!usuarioId) return;
 
     try {
-      const res = await fetch(`${API}/horas/paciente/${rut}/`);
+      const res = await fetch(`${API}/horas/usuario/${usuarioId}/`);
 
       if (!res.ok) {
-        console.error("Error HTTP", res.status);
+        console.error("Error cargando citas");
         return;
       }
 
       const data = await res.json();
       setCitas(data);
-
     } catch (error) {
-      console.error("ERROR al cargar citas:", error);
+      console.error("Error:", error);
       alert("No se pudieron cargar las citas.");
     }
   };
@@ -47,16 +41,12 @@ const UserCitas = () => {
         method: "PUT",
       });
 
-      if (!res.ok) {
-        alert("Error cancelando cita");
-        return;
+      if (res.ok) {
+        alert("Cita cancelada");
+        cargarCitas();
       }
-
-      alert("Cita cancelada correctamente");
-      cargarCitas();
-
-    } catch (error) {
-      alert("Error de conexión al cancelar la cita");
+    } catch {
+      alert("Error al cancelar cita");
     }
   };
 
@@ -78,10 +68,15 @@ const UserCitas = () => {
           <p className="text-stone-600">No tienes citas agendadas.</p>
         ) : (
           citas.map((c) => (
-            <div key={c.id} className="bg-white p-4 rounded-xl border shadow flex justify-between">
+            <div
+              key={c.id}
+              className="bg-white p-4 rounded-xl border shadow flex justify-between"
+            >
               <div>
-                <p className="font-semibold">{c.fecha} — {c.hora_inicio}</p>
-                <p className="text-stone-700">{c.estado}</p>
+                <p className="font-semibold">
+                  {c.fecha} — {c.hora_inicio}
+                </p>
+                <p className="text-stone-600 capitalize">{c.estado}</p>
               </div>
 
               {c.estado !== "cancelada" && (

@@ -5,6 +5,7 @@ from django.db import models
 class Registro(models.Model):
     nombre = models.CharField(max_length=50)
     apellido = models.CharField(max_length=50)
+    rut = models.CharField(max_length=15, unique=True)
     email = models.EmailField(max_length=100, unique=True)
     password_hash = models.CharField(max_length=255)
 

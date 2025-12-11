@@ -18,21 +18,25 @@ from django.urls import path
 from api import views
 
 urlpatterns = [
-    path("pacientes/<rut>/", views.buscar_paciente_por_rut),
+
     path("pacientes/crear/", views.crear_paciente),
+    path("pacientes/<str:rut>/", views.buscar_paciente_por_rut),   
     path("pacientes/", views.listar_pacientes),
     path("pacientes/editar/<rut>/", views.editar_paciente),
 
     path("fichas/crear/", views.crear_ficha_medica),
     path("fichas/", views.listar_fichas),
     path("fichas/<int:id_ficha>/", views.obtener_ficha),
+    path("fichas/usuario/<int:usuario_id>/", views.fichas_por_usuario),
 
     path("horas-ocupadas/", views.horas_ocupadas),
-    path("horas/agendar/", views.agendar_hora),
-    path("horas/cancelar/<int:id>/", views.cancelar_hora),
+    path("horas/agendar/", views.crear_hora_usuario),
+    path("horas/cancelar/<int:id_hora>/", views.cancelar_hora),
     path("horas/agenda-doctor/", views.agenda_doctor),
+    path("horas/usuario/<int:usuario_id>/", views.horas_por_usuario),
+
+    path("usuario/<str:rut>/", views.buscar_usuario_por_rut),
 
     path("registro/", views.registro_usuario),
     path("login/", views.login_usuario),
-
 ]
