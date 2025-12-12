@@ -22,9 +22,8 @@ const SecretariaRegistrarPaciente = () => {
 
   const [error, setError] = useState("");
 
-  // 🔍 Buscar por RUT
+  // Buscar por RUT
   const handleRutChange = async (value) => {
-    // Normalizar manteniendo DV + guion
     const limpio = value.replace(/[^\dkK-]/g, "").toUpperCase();
     setRut(limpio);
 
@@ -32,13 +31,11 @@ const SecretariaRegistrarPaciente = () => {
     setUsuario(null);
     setPacienteExiste(false);
 
-    // Validar formato completo: 12345678-9 o 1234567-K
     const rutRegex = /^\d{7,8}-[\dkK]$/;
     if (!rutRegex.test(limpio)) {
-      return; // No consultar backend hasta que el RUT esté correcto
+      return; 
     }
 
-    // 1) Buscar paciente (silenciar error 404)
     let resPaciente;
     try {
       resPaciente = await fetch(`${API}/pacientes/${limpio}/`);
@@ -52,7 +49,6 @@ const SecretariaRegistrarPaciente = () => {
       return;
     }
 
-    // 2) Buscar usuario asociado al RUT (silenciar 404)
     let resUsuario;
     try {
       resUsuario = await fetch(`${API}/usuario/${limpio}/`);
@@ -76,7 +72,6 @@ const SecretariaRegistrarPaciente = () => {
       return;
     }
 
-    // Usuario NO existe → limpiar campos
     setUsuario(null);
     setForm({
       nombre: "",
@@ -93,7 +88,7 @@ const SecretariaRegistrarPaciente = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // 🟢 Guardar paciente
+  // Guardar paciente
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");

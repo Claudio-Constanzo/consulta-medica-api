@@ -14,7 +14,6 @@ const DoctorCrearFicha = () => {
   const [titulo, setTitulo] = useState("");
   const [notas, setNotas] = useState("");
 
-  // Fecha y hora actuales (solo para mostrar)
   const fechaActual = new Date().toLocaleDateString("es-CL");
   const horaActual = new Date().toLocaleTimeString("es-CL", {
     hour: "2-digit",
@@ -55,12 +54,7 @@ const DoctorCrearFicha = () => {
     }
 
     const payload = {
-      rut: paciente.rut,
-      nombre: paciente.nombre,
-      apellido: paciente.apellido,
-      telefono: paciente.telefono,
-      direccion: paciente.direccion,
-      prevision: paciente.prevision,
+      rut_paciente: paciente.rut,
       titulo,
       notas,
     };

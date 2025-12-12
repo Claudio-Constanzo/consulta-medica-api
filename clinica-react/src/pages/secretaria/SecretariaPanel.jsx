@@ -69,7 +69,7 @@ const SecretariaPanel = () => {
         <DashboardCard
           Icon={FileText}
           title="Fichas Médicas"
-          subtitle="Ver fichas (solo lectura)"
+          subtitle="Ver fichas"
           buttonText="Ver Fichas"
           to="/secretaria/fichas"
         />

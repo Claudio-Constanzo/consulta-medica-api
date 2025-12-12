@@ -1,12 +1,13 @@
 from datetime import datetime
-from django.contrib.auth.hashers import make_password, check_password
+from zoneinfo import ZoneInfo
+from django.contrib.auth.hashers import make_password
 from rest_framework import status
 
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .models import Paciente, FichaMedica, HoraAgendada, Secretaria, Registro
+from .models import Paciente, FichaMedica, HoraAgendada, Secretaria, Registro, Doctor
 from .serializer import PacienteSerializer, FichaMedicaSerializer, HoraAgendadaSerializer, SecretariaSerializer, RegistroSerializer
 
 
@@ -58,6 +59,7 @@ def crear_paciente(request):
         rut=rut if rut else None,
         nombre=nombre,
         apellido=apellido,
+        email=request.data.get("email"),
         telefono=telefono,
         direccion=direccion,
         prevision=prevision,
@@ -105,7 +107,25 @@ def obtener_ficha(request, id_ficha):
 @api_view(["POST"])
 def crear_ficha_medica(request):
     data = request.data.copy()
-    data["hora_ficha"] = datetime.now()
+    data["hora_ficha"] = datetime.now(ZoneInfo("America/Santiago"))
+
+    rut_paciente = data.get("rut_paciente")
+
+    if rut_paciente:
+        try:
+            paciente = Paciente.objects.get(rut=rut_paciente)
+
+            data["nombre_paciente"] = paciente.nombre
+            data["apellido_paciente"] = paciente.apellido
+            data["telefono_paciente"] = paciente.telefono
+            data["direccion_paciente"] = paciente.direccion
+            data["prevision_paciente"] = paciente.prevision
+
+        except Paciente.DoesNotExist:
+            return Response(
+                {"detail": "Paciente no encontrado."},
+                status=400
+            )
 
     serializer = FichaMedicaSerializer(data=data)
 
@@ -115,10 +135,12 @@ def crear_ficha_medica(request):
             {
                 "message": "Ficha médica guardada",
                 "data": FichaMedicaSerializer(ficha).data,
-            }
+            },
+            status=201
         )
 
     return Response(serializer.errors, status=400)
+
 
 
 @api_view(["GET"])
@@ -143,26 +165,6 @@ def agenda_doctor(request):
     horas = HoraAgendada.objects.filter(fecha=fecha).order_by("hora_inicio")
     serializer = HoraAgendadaSerializer(horas, many=True)
     return Response(serializer.data)
-
-
-@api_view(["POST"])
-def agendar_hora(request):
-    data = request.data.copy()
-    if "estado" not in data:
-        data["estado"] = "reservada"
-
-    serializer = HoraAgendadaSerializer(data=data)
-
-    if serializer.is_valid():
-        hora = serializer.save()
-        return Response(
-            {
-                "message": "Hora agendada correctamente",
-                "data": HoraAgendadaSerializer(hora).data,
-            }
-        )
-
-    return Response(serializer.errors, status=400)
 
 
 @api_view(["POST"])
@@ -255,7 +257,7 @@ def registro_usuario(request):
             apellido=apellido,
             rut=rut,
             email=email,
-            password_hash=make_password(password)
+            password=password
         )
 
         return Response(
@@ -281,8 +283,15 @@ def login_usuario(request):
     except Registro.DoesNotExist:
         return Response({"detail": "Credenciales inválidas."}, status=400)
 
-    if not check_password(password, registro.password_hash):
+    if password != registro.password:
         return Response({"detail": "Credenciales inválidas."}, status=400)
+
+    if Secretaria.objects.filter(usuarios_id_usuario=registro.id).exists():
+        rol = "secretaria"
+    elif Doctor.objects.filter(usuarios_id_usuario=registro.id).exists():
+        rol = "doctor"
+    else:
+        rol = "usuario"
 
     paciente = Paciente.objects.filter(usuarios_id_usuario=registro.id).first()
 
@@ -292,43 +301,76 @@ def login_usuario(request):
         "nombre": registro.nombre,
         "apellido": registro.apellido,
         "email": registro.email,
+        "rol": rol,
     }, status=200)
 
 
 @api_view(["GET"])
 def horas_por_usuario(request, usuario_id):
-    horas = HoraAgendada.objects.filter(usuario_id=usuario_id).order_by("fecha", "hora_inicio")
+    paciente = Paciente.objects.filter(
+        usuarios_id_usuario=usuario_id
+    ).first()
+
+    if not paciente:
+        return Response([], status=200)
+
+    horas = HoraAgendada.objects.filter(
+        paciente=paciente
+    ).order_by("fecha", "hora_inicio")
+
     serializer = HoraAgendadaSerializer(horas, many=True)
     return Response(serializer.data, status=200)
 
 
 @api_view(["GET"])
 def fichas_por_usuario(request, usuario_id):
-    fichas = FichaMedica.objects.filter(usuarios_id_usuario=usuario_id).order_by("-hora_ficha")
-    serializer = FichaMedicaSerializer(fichas, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    paciente = Paciente.objects.filter(
+        usuarios_id_usuario=usuario_id
+    ).first()
 
+    if not paciente:
+        return Response([], status=200)
+
+    fichas = FichaMedica.objects.filter(
+        rut_paciente=paciente.rut
+    ).order_by("-hora_ficha")
+
+    serializer = FichaMedicaSerializer(fichas, many=True)
+    return Response(serializer.data, status=200)
 
 
 @api_view(["POST"])
 def crear_hora_usuario(request):
-    usuario_id = request.data.get("usuario_id")
     fecha = request.data.get("fecha")
     hora_inicio = request.data.get("hora_inicio")
     hora_final = request.data.get("hora_final")
-    estado = "reservada"
+    paciente_id = request.data.get("paciente_id")
 
-    nueva = HoraAgendada.objects.create(
-        usuario_id=usuario_id,
+    if not all([fecha, hora_inicio, hora_final, paciente_id]):
+        return Response(
+            {"detail": "Datos incompletos"},
+            status=400
+        )
+
+    try:
+        paciente = Paciente.objects.get(id_paciente=paciente_id)
+    except Paciente.DoesNotExist:
+        return Response(
+            {"detail": "Paciente no existe"},
+            status=400
+        )
+
+    HoraAgendada.objects.create(
         fecha=fecha,
         hora_inicio=hora_inicio,
         hora_final=hora_final,
-        estado=estado,
-        paciente="",  
+        paciente=paciente
     )
 
-    serializer = HoraAgendadaSerializer(nueva)
-    return Response(serializer.data, status=201)
+    return Response(
+        {"detail": "Hora agendada correctamente"},
+        status=201
+    )
 
 
 @api_view(["PUT"])
@@ -366,5 +408,6 @@ def buscar_usuario_por_rut(request, rut):
         "email": registro.email,
         "rut": registro.rut,
     })
+
 
 

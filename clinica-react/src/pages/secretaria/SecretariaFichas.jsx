@@ -10,7 +10,6 @@ const SecretariaFichas = () => {
   const [fichas, setFichas] = useState([]);
   const [search, setSearch] = useState("");
 
-  // 🔥 Cargar fichas REALES desde Django
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -26,7 +25,6 @@ const SecretariaFichas = () => {
     cargar();
   }, []);
 
-  // 🔎 Buscador por título + nombre paciente
   const filtered = fichas.filter((f) =>
     `${f.titulo} ${f.nombre_paciente} ${f.apellido_paciente}`
       .toLowerCase()

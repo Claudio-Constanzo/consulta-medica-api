@@ -6,12 +6,11 @@ import Button from "../../components/common/Button";
 const API = "http://127.0.0.1:8000";
 
 const SecretariaEditarPaciente = () => {
-  const { id } = useParams(); // aquí usamos rut como param
+  const { id } = useParams(); 
   const navigate = useNavigate();
 
   const [paciente, setPaciente] = useState(null);
 
-  // 🔥 Cargar paciente real
   useEffect(() => {
     const cargar = async () => {
       const res = await fetch(`${API}/pacientes/${id}/`);

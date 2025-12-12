@@ -1,6 +1,9 @@
 from django.contrib import admin
+from .models import Registro, Secretaria, Doctor, Paciente
 
 # Register your models here.
 
-class RegistrarSecretariaAdmin(admin.ModelAdmin):
-    list_display = ('nombre_secretaria', 'apellido_secretaria', 'rut_secretaria', 'email_secretaria', 'contraseña_secretaria')
+admin.site.register(Registro)
+admin.site.register(Secretaria)
+admin.site.register(Doctor)
+admin.site.register(Paciente)
