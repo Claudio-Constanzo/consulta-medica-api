@@ -1,124 +1,123 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import {
-  FormGroup,
-  FormControl,
-  Validators,
-  ReactiveFormsModule,
-  FormsModule,
-  AbstractControl,
-  ValidationErrors,
-} from '@angular/forms';
-import { Router } from '@angular/router';
-import { ApiService } from '../../services/api';
+// src/app/pages/registro/registro.ts
 
-// Validador de RUT (formato + dígito verificador)
+import { Component, OnInit } from '@angular/core';
+import { CommonModule} from '@angular/common'; 
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms'; 
+import { Router } from '@angular/router'; 
+import { HttpClientModule } from '@angular/common/http';
+import { AuthService } from '../../services/auth.service';
+
+
+// Validador para el RUT
 export function rutValidator(control: AbstractControl): ValidationErrors | null {
-  const value: string = control.value;
-
-  if (!value) return null;
-
-  // Limpia puntos y guión
-  const rutLimpio = value.replace(/\./g, '').replace(/-/g, '');
-
-  if (rutLimpio.length < 8) {
+  const rut = control.value;
+  
+  if (!rut || rut.length < 8) {
     return { rutInvalido: true };
   }
+  
+  const regex = /^\d{7,8}-[\dkK]$/; 
+  if (!regex.test(rut)) {
+    return { rutFormatoInvalido: true };
+  }
+  return null;
+}
 
-  const cuerpo = rutLimpio.slice(0, -1);
-  const dv = rutLimpio.slice(-1).toUpperCase();
+// Validador para la Fecha de Nacimiento (Rango de Edad)
+export function fechaNacimientoValidator(control: AbstractControl): ValidationErrors | null {
+  const fechaStr = control.value;
 
-  if (!/^\d+$/.test(cuerpo)) {
-    return { rutInvalido: true };
+  if (!fechaStr) {
+    return null; 
   }
 
-  // Cálculo DV (módulo 11)
-  let suma = 0;
-  let multiplo = 2;
-
-  for (let i = cuerpo.length - 1; i >= 0; i--) {
-    suma += parseInt(cuerpo.charAt(i), 10) * multiplo;
-    multiplo = multiplo === 7 ? 2 : multiplo + 1;
+  const fechaNacimiento = new Date(fechaStr);
+  const hoy = new Date();
+  
+  // 1. Validar que no sea una fecha futura
+  if (fechaNacimiento > hoy) {
+    return { fechaFutura: true };
   }
 
-  const resto = 11 - (suma % 11);
-  let dvCalculado: string;
+  // 2. Validar edad máxima (No mayor de 120 años)
+  const maxAnios = 120;
+  const fechaLimite = new Date();
+  fechaLimite.setFullYear(hoy.getFullYear() - maxAnios); 
+  
+  if (fechaNacimiento < fechaLimite) {
+    return { edadExcesiva: true };
+  }
 
-  if (resto === 11) dvCalculado = '0';
-  else if (resto === 10) dvCalculado = 'K';
-  else dvCalculado = resto.toString();
-
-  return dv === dvCalculado ? null : { rutInvalido: true };
+  return null;
 }
 
 @Component({
   selector: 'app-registro',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
-  templateUrl: './registro.html',   
-  styleUrls: ['./registro.css'],    
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule], 
+  templateUrl: './registro.html',
+  styleUrl: './registro.css',
 })
-export class RegistroComponent {
+export class RegistroComponent implements OnInit {
+
   form: FormGroup;
-  errorMsg: string | null = null;
-  successMsg: string | null = null;
-  loading = false;
+  errorMsg: string = '';
+  successMsg: string = '';
+  loading: boolean = false; 
 
-  roles = ['paciente', 'doctor', 'secretaria'];
+  constructor(
+    private fb: FormBuilder, 
+    private router: Router,
+    private authService: AuthService 
+  ) {
+    this.form = this.fb.group({
+      rut: ['', [Validators.required, rutValidator]], 
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      nombre: ['', Validators.required],
+      apellido: ['', Validators.required],
+      fechaNacimiento: ['', [
+        Validators.required, 
+        fechaNacimientoValidator 
+      ]],
+    });
+  }
 
-constructor(private api: ApiService, private router: Router) {
-  this.form = new FormGroup({
-    rut: new FormControl('', [
-      Validators.required,
-      rutValidator   
-    ]),
-    nombre: new FormControl('', [
-      Validators.required,
-      Validators.minLength(3),
-    ]),
-    email: new FormControl('', [Validators.required, Validators.email]),
-    password: new FormControl('', [
-      Validators.required,
-      Validators.minLength(6),
-    ]),
-    password2: new FormControl('', [Validators.required]),
-    rol: new FormControl('paciente', [Validators.required]),
-  });
-}
+  ngOnInit(): void {
+    // Si ya está logueado, redirigir
+    if (this.authService.isLoggedIn()) {
+      this.router.navigate(['/dashboard']);
+    }
+  }
 
   onSubmit() {
-    this.errorMsg = null;
-    this.successMsg = null;
-
-    if (this.form.invalid) {
-      this.errorMsg = 'Revisa los campos del formulario.';
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    const { rut, nombre, email, password, password2, rol } = this.form.value;
-
-    if (password !== password2) {
-      this.errorMsg = 'Las contraseñas no coinciden.';
-      return;
-    }
-
-    const payload = { rut, nombre, email, password, rol };
-
     this.loading = true;
+    this.errorMsg = '';
+    this.successMsg = '';
 
-    this.api.registerUser(payload).subscribe({
-      next: () => {
-        this.loading = false;
-        this.successMsg =
-          'Usuario creado correctamente. Ahora puedes iniciar sesión.';
-        setTimeout(() => this.router.navigate(['/login']), 1500);
-      },
-      error: (err) => {
-        console.error(err);
-        this.loading = false;
-        this.errorMsg = 'No se pudo registrar el usuario (revisa la API).';
-      },
-    });
+    if (this.form.valid) {
+      this.authService.register(this.form.value).subscribe({
+        next: (response) => {
+          this.authService.saveToken(response.token);
+          this.successMsg = '¡Registro exitoso! Redirigiendo...';
+          this.loading = false;
+          this.router.navigate(['/dashboard']); 
+        },
+        error: (err) => {
+          // Manejo de errores detallado de la API
+          this.errorMsg = err.error?.message || 'Error en el registro. Verifique la conexión o intente con otros datos.';
+          this.loading = false;
+          this.successMsg = '';
+        }
+      });
+
+    } else {
+      this.errorMsg = 'Por favor, completa todos los campos correctamente.';
+      this.loading = false;
+    }
+  }
+  
+  get f() {
+    return this.form.controls;
   }
 }

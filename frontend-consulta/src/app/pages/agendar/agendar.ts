@@ -1,12 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  FormsModule,
-  ReactiveFormsModule,
-  FormGroup,
-  FormControl,
-  Validators
-} from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { ApiService } from '../../services/api';
 
 @Component({
@@ -19,9 +13,8 @@ import { ApiService } from '../../services/api';
 export class AgendarComponent implements OnInit {
 
   form!: FormGroup;
-  minDate!: string;
-  availableSlots: string[] = [];
-
+  minDate!: string;              // fecha mínima (hoy) para el input date
+  availableSlots: string[] = []; // HH:mm para el select de horas
   validationMsg: string | null = null;
   successMsg: string | null = null;
   errorMsg: string | null = null;
@@ -32,16 +25,15 @@ export class AgendarComponent implements OnInit {
     this.form = new FormGroup({
       fecha: new FormControl<string>('', Validators.required),
       hora: new FormControl<string>('', Validators.required),
-      motivo: new FormControl<string>('', [
-        Validators.required,
-        Validators.minLength(5)
-      ])
+      motivo: new FormControl<string>('', [Validators.required, Validators.minLength(5)])
     });
 
+    // Establecer fecha mínima (hoy)
     const today = new Date();
     this.minDate = this.toDateInputValue(today);
   }
 
+  // Convertir Date a formato 'YYYY-MM-DD' para input[type=date]
   private toDateInputValue(date: Date): string {
     const year = date.getFullYear();
     const month = (`0${date.getMonth() + 1}`).slice(-2);
@@ -49,9 +41,10 @@ export class AgendarComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
+  // Cuando cambia la fecha seleccionada
   onDateChange(event: any) {
     const fechaStr = event.target.value as string;
-    this.form.patchValue({ hora: '' });
+    this.form.patchValue({ hora: '' }); // Limpiar hora
     this.availableSlots = [];
     this.validationMsg = null;
 
@@ -59,7 +52,7 @@ export class AgendarComponent implements OnInit {
 
     const selected = new Date(fechaStr + 'T00:00:00');
 
-    // 1) No fechas pasadas
+    // No permitir días pasados
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (selected < today) {
@@ -67,26 +60,27 @@ export class AgendarComponent implements OnInit {
       return;
     }
 
-    const day = selected.getDay(); // 0=Dom, 1=Lun,...,5=Vie,6=Sáb
+    const day = selected.getDay(); // 0=Dom, 1=Lun, ..., 5=Vie, 6=Sáb
 
-    // 2) No fines de semana
+    // No permitir fines de semana
     if (day === 0 || day === 6) {
       this.validationMsg = 'No se atiende sábados ni domingos.';
       return;
     }
 
-    // 3) Horarios según día
+    // Generar slots según el día
     if (day === 5) {
-      // Viernes 09:00–13:00
+      // Viernes: solo 09:00–13:00
       this.availableSlots = this.generateSlots(9, 13);
     } else {
-      // Lun–Jue: 09–12 y 15–18
+      // Lunes–Jueves: 09:00–12:00 y 15:00–18:00
       const morning = this.generateSlots(9, 12);
       const afternoon = this.generateSlots(15, 18);
       this.availableSlots = [...morning, ...afternoon];
     }
   }
 
+  // Generar slots de hora (ejemplo: 09:00, 10:00, ...)
   private generateSlots(startHour: number, endHour: number): string[] {
     const slots: string[] = [];
     for (let h = startHour; h < endHour; h++) {
@@ -95,6 +89,7 @@ export class AgendarComponent implements OnInit {
     return slots;
   }
 
+  // Método de submit (al hacer click en "Agendar")
   onSubmit() {
     this.successMsg = null;
     this.errorMsg = null;
@@ -106,8 +101,11 @@ export class AgendarComponent implements OnInit {
     }
 
     const { fecha, hora, motivo } = this.form.value;
+
+    // Unir fecha y hora en un único string ISO
     const fechaHora = new Date(`${fecha}T${hora}:00`);
 
+    // Payload que se enviará
     const payload = {
       fecha: fechaHora.toISOString(),
       motivo: motivo,
@@ -115,6 +113,7 @@ export class AgendarComponent implements OnInit {
       // doctor: Y,
     };
 
+    // Llamada al backend para crear la consulta
     this.api.createConsulta(payload).subscribe({
       next: () => {
         this.successMsg = 'Hora agendada correctamente.';
