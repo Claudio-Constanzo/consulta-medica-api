@@ -18,7 +18,6 @@ const DoctorFichas = () => {
       if (!res.ok) throw new Error("Error HTTP");
       const data = await res.json();
 
-      // Adaptar los datos del backend al formato que usamos en la tabla
       const adaptadas = (data || []).map((f) => ({
         id: f.id_ficha,
         paciente: `${f.nombre_paciente || ""} ${f.apellido_paciente || ""}`.trim(),

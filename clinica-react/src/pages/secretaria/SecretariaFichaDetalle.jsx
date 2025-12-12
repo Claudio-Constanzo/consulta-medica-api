@@ -10,7 +10,6 @@ const SecretariaFichaDetalle = () => {
 
   const [ficha, setFicha] = useState(null);
 
-  // 🔥 Cargar ficha real
   useEffect(() => {
     const cargar = async () => {
       try {

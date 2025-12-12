@@ -74,30 +74,45 @@ const SecretariaAgendarHora = () => {
     cargar();
   }, [fecha]);
 
+  const calcularHoraFinal = (horaInicio) => {
+  const [h, m] = horaInicio.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m + 30);
+  return d.toTimeString().slice(0, 5);
+};
+
+
   const guardarCita = async () => {
-    if (!paciente || !fecha || !horaSeleccionada) {
-      alert("Debe completar todos los campos");
-      return;
-    }
+  if (!paciente || !fecha || !horaSeleccionada) {
+    alert("Debe completar todos los campos");
+    return;
+  }
 
-    const res = await fetch(`${API}/horas/agendar/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fecha,
-        hora_inicio: horaSeleccionada,
-        paciente: `${paciente.nombre} ${paciente.apellido}`,
-      }),
-    });
-
-    if (!res.ok) {
-      alert("Error al guardar cita");
-      return;
-    }
-
-    alert("Cita agendada correctamente");
-    navigate("/secretaria/agenda-doctor");
+  const payload = {
+    paciente_id: paciente.id_paciente,
+    fecha,
+    hora_inicio: horaSeleccionada,
+    hora_final: calcularHoraFinal(horaSeleccionada),
   };
+
+  const res = await fetch(`${API}/horas/agendar/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.detail || "Error al guardar cita");
+    return;
+  }
+
+  alert("Cita agendada correctamente");
+  navigate("/secretaria/agenda-doctor");
+};
+
+
 
   return (
     <div className="min-h-screen bg-amber-50/60 p-6">
@@ -129,18 +144,22 @@ const SecretariaAgendarHora = () => {
         </div>
 
         {paciente && (
-          <div className="bg-amber-50/40 p-4 rounded-xl mb-6 border border-amber-100">
-            <p className="font-semibold">
+            <div className="bg-amber-50/40 p-4 rounded-xl mb-6 border border-amber-100 text-sm">
+              <p className="font-semibold">
               {paciente.nombre} {paciente.apellido}
-            </p>
-            <p>{paciente.telefono}</p>
-            <p>{paciente.direccion}</p>
-          </div>
-        )}
+              </p>
+              <p><strong>RUT:</strong> {paciente.rut}</p>
+              <p><strong>Teléfono:</strong> {paciente.telefono}</p>
+              <p><strong>Dirección:</strong> {paciente.direccion}</p>
+              <p><strong>Previsión:</strong> {paciente.prevision}</p>
+              <p><strong>Email:</strong> {paciente.email}</p>
+        </div>
+      )}
 
         <label>Fecha:</label>
         <input
           type="date"
+          min={new Date().toISOString().split("T")[0]}
           value={fecha}
           onChange={(e) => setFecha(e.target.value)}
           className="w-full px-4 py-2 border rounded-lg mb-6"

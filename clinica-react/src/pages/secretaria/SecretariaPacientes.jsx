@@ -10,7 +10,6 @@ const SecretariaPacientes = () => {
   const [pacientes, setPacientes] = useState([]);
   const [search, setSearch] = useState("");
 
-  // 🔥 CARGA REAL DESDE DJANGO
   const cargarPacientes = async () => {
     try {
       const res = await fetch(`${API}/pacientes/`);
@@ -26,7 +25,6 @@ const SecretariaPacientes = () => {
     cargarPacientes();
   }, []);
 
-  // 🔎 FILTRO ORIGINAL POR NOMBRE + APELLIDO
   const filtered = pacientes.filter((p) =>
     `${p.nombre} ${p.apellido}`.toLowerCase().includes(search.toLowerCase())
   );
@@ -72,7 +70,7 @@ const SecretariaPacientes = () => {
             </div>
 
             <button
-              onClick={() => navigate(`/secretaria/editar/${p.rut}`)}
+              onClick={() => navigate(`/secretaria/pacientes/${p.rut}`)}
               className="flex items-center gap-2 text-stone-700 hover:text-stone-900"
             >
               <Edit size={18} /> Editar

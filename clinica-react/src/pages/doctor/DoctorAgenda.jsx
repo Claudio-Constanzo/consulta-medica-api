@@ -19,13 +19,17 @@ const DoctorAgenda = () => {
   const fetchAgenda = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/horas-ocupadas/?fecha=${fecha}`);
+      const res = await fetch(`${API_BASE}/horas/agenda-doctor/?fecha=${fecha}`);
       if (!res.ok) throw new Error("Error HTTP");
       const data = await res.json();
 
-      const ocupadas = (data.ocupadas || []).map((h, idx) => ({
+      const ocupadas = (data || []).map((h, idx) => ({
         id: idx + 1,
-        hora: String(h).slice(0, 5), // de "10:30:00" a "10:30"
+        hora_inicio: String(h.hora_inicio).slice(0, 5), 
+
+        paciente: h.paciente_nombre && h.paciente_apellido
+          ? `${h.paciente_nombre} ${h.paciente_apellido}`
+          : "Sin asignar",
       }));
 
       setAgenda(ocupadas);
@@ -41,7 +45,12 @@ const DoctorAgenda = () => {
     fetchAgenda();
   }, [fecha]);
 
-  const fechaLegible = new Date(fecha).toLocaleDateString("es-CL");
+  const fechaLegible = new Intl.DateTimeFormat("es-CL", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(`${fecha}T12:00:00`));
 
   return (
     <div className="min-h-screen bg-amber-50/60 p-6">
@@ -66,20 +75,17 @@ const DoctorAgenda = () => {
           </p>
         ) : (
           <div className="space-y-4">
-            {agenda.map((cita) => (
+            {agenda.map((cita, idx) => (
               <div
-                key={cita.id}
-                className="p-4 rounded-xl bg-amber-50/40 border border-amber-100 flex justify-between items-center"
+                key={idx}
+                className="p-4 rounded-xl bg-amber-50/40 border border-amber-100"
               >
-                <div>
-                  <p className="font-semibold text-stone-900 text-lg">
-                    {cita.hora} hrs
-                  </p>
-                  <p className="text-stone-600 text-sm">
-                    Cita reservada
-                    {" (datos de paciente se pueden agregar más adelante)"}
-                  </p>
-                </div>
+                <p className="font-semibold text-stone-900 text-lg">
+                  {cita.hora_inicio} hrs
+                </p>
+                <p className="text-stone-600 text-sm">
+                  Paciente: {cita.paciente}
+                </p>
               </div>
             ))}
           </div>

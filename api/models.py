@@ -7,7 +7,7 @@ class Registro(models.Model):
     apellido = models.CharField(max_length=50)
     rut = models.CharField(max_length=15, unique=True)
     email = models.EmailField(max_length=100, unique=True)
-    password_hash = models.CharField(max_length=255)
+    password = models.CharField(max_length=255)
 
 class HoraAgendada(models.Model):
     fecha = models.DateField()
@@ -32,6 +32,9 @@ class Paciente(models.Model):
     prevision = models.CharField(max_length=100, verbose_name="Previsión")
     usuarios_id_usuario = models.BigIntegerField(null=True, blank=True, verbose_name="ID de usuario asociado")
 
+    def __str__(self):
+        return f"{self.nombre} {self.apellido} ({self.rut})"
+
 
 class FichaMedica(models.Model):
     id_ficha = models.BigAutoField(primary_key=True)
@@ -50,5 +53,13 @@ class Secretaria(models.Model):
     nombre_secretaria = models.CharField(max_length=50)
     apellido_secretaria = models.CharField(max_length=50)
     email_secretaria = models.EmailField(max_length=100, unique=True)
+    password_hash = models.CharField(max_length=255)
+    usuarios_id_usuario = models.BigIntegerField(blank=True, null=True)
+
+class Doctor(models.Model):
+    rut_doctor = models.CharField(max_length=15, unique=True)
+    nombre_doctor = models.CharField(max_length=50)
+    apellido_doctor = models.CharField(max_length=50)
+    email_doctor = models.EmailField(max_length=100, unique=True)
     password_hash = models.CharField(max_length=255)
     usuarios_id_usuario = models.BigIntegerField(blank=True, null=True)

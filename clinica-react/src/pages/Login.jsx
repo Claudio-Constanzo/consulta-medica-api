@@ -41,15 +41,27 @@ const Login = () => {
         return;
       }
 
-      // ✅ Guardar datos en localStorage para usarlos en el resto del front
+      //  Guardar datos en localStorage
       localStorage.setItem("idUsuario", data.idUsuario);
       localStorage.setItem("pacienteId", data.pacienteId ?? "");
       localStorage.setItem("userName", data.nombre);
       localStorage.setItem("userApellido", data.apellido);
       localStorage.setItem("userEmail", data.email);
+      localStorage.setItem("rol", data.rol);
 
-      // Después del login mandamos al dashboard de usuario
-      navigate("/user/dashboard");
+      // Redirección según rol
+      switch (data.rol) {
+        case "secretaria":
+          navigate("/secretaria/panel");
+          break;
+
+        case "doctor":
+          navigate("/doctor/panel");
+          break;
+
+        default:
+          navigate("/user/dashboard");
+      }
     } catch (err) {
       console.error(err);
       setError("No se pudo conectar con el servidor.");
