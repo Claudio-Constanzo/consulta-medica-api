@@ -9,7 +9,6 @@ const getTodayYmdChile = () =>
     timeZone: "America/Santiago",
   }).format(new Date());
 
-// 🔧 calcula hora final (+30 min)
 const calcularHoraFinal = (horaInicio) => {
   const [h, m] = horaInicio.split(":").map(Number);
   const d = new Date();
@@ -27,7 +26,6 @@ const UserAgendarHora = () => {
   const [horaSeleccionada, setHoraSeleccionada] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 🔄 cargar horas disponibles
   useEffect(() => {
     if (!fecha) return;
 
@@ -63,7 +61,6 @@ const UserAgendarHora = () => {
     fetchHoras();
   }, [fecha]);
 
-  // 🟢 confirmar hora
   const reservar = async () => {
     if (!fecha || !horaSeleccionada || !pacienteId) {
       alert("Datos incompletos.");
@@ -78,7 +75,7 @@ const UserAgendarHora = () => {
           fecha,
           hora_inicio: horaSeleccionada,
           hora_final: calcularHoraFinal(horaSeleccionada),
-          paciente_id: pacienteId, // ✅ FIX CLAVE
+          paciente_id: pacienteId,
         }),
       });
 
@@ -97,7 +94,6 @@ const UserAgendarHora = () => {
     }
   };
 
-  // 📅 fecha legible (Chile)
   const fechaLegible = new Intl.DateTimeFormat("es-CL", {
     timeZone: "America/Santiago",
     year: "numeric",
@@ -109,7 +105,7 @@ const UserAgendarHora = () => {
     <div className="min-h-screen bg-amber-50/60 p-6">
       {/* 🔙 VOLVER */}
       <button
-        onClick={() => navigate("/user/dashboard")} // ✅ FIX RUTA
+        onClick={() => navigate("/user/dashboard")} 
         className="flex items-center gap-2 text-stone-600 hover:text-stone-900 mb-6"
       >
         <ArrowLeft size={20} /> Volver

@@ -12,33 +12,9 @@ class FichaMedicaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class HoraAgendadaSerializer(serializers.ModelSerializer):
-    paciente_nombre = serializers.CharField(
-        source="paciente.nombre",
-        read_only=True
-    )
-    paciente_apellido = serializers.CharField(
-        source="paciente.apellido",
-        read_only=True
-    )
-    paciente_rut = serializers.CharField(
-        source="paciente.rut",
-        read_only=True
-    )
-
     class Meta:
         model = HoraAgendada
-        fields = [
-            "id",
-            "fecha",
-            "hora_inicio",
-            "hora_final",
-            "estado",
-            "paciente_nombre",
-            "paciente_apellido",
-            "paciente_rut",
-        ]
-
-
+        fields = "__all__"
 
 class SecretariaSerializer(serializers.ModelSerializer):
     class Meta:

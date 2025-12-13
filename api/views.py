@@ -1,6 +1,5 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from django.contrib.auth.hashers import make_password
 from rest_framework import status
 
 from django.shortcuts import get_object_or_404
