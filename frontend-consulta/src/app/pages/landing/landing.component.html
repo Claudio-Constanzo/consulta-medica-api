@@ -1,0 +1,64 @@
+<div class="min-h-screen bg-white">
+  <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur border-b border-amber-100 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="font-semibold text-stone-900">Consulta Médica</div>
+      <nav class="flex gap-4 text-sm text-stone-700">
+        <button (click)="scrollTo('home')" type="button">Inicio</button>
+        <button (click)="scrollTo('services')" type="button">Servicios</button>
+        <button (click)="scrollTo('contacto')" type="button">Contacto</button>
+      </nav>
+    </div>
+  </header>
+
+  <section id="home" class="pt-28 pb-16 bg-amber-50/70">
+    <div class="max-w-7xl mx-auto px-4">
+      <h1 class="text-4xl md:text-5xl font-semibold text-stone-900 mb-4">Tu Salud es Nuestra Prioridad</h1>
+      <p class="text-stone-600 mb-6 max-w-2xl">Atención médica de alta calidad con un trato cercano y personalizado.</p>
+
+      <div class="flex gap-3">
+        <button (click)="irLogin()" class="px-5 py-3 rounded-xl bg-stone-900 text-white font-semibold" type="button">
+          Agendar Cita
+        </button>
+        <button (click)="scrollTo('services')" class="px-5 py-3 rounded-xl border border-stone-300 text-stone-800 font-semibold" type="button">
+          Nuestros Servicios
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section id="services" class="py-16">
+    <div class="max-w-7xl mx-auto px-4">
+      <h2 class="text-3xl font-semibold text-stone-900 text-center mb-8">Nuestros Servicios</h2>
+
+      <div class="flex items-center gap-4">
+        <button (click)="prev()" class="h-10 w-10 rounded-full border" type="button">‹</button>
+
+        <div class="flex-1 overflow-hidden">
+          <div class="flex transition-transform duration-500" [style.transform]="'translateX(-' + (i*100) + '%)'">
+            <article *ngFor="let s of servicios" class="min-w-full bg-amber-50/60 border border-amber-100 rounded-3xl p-8">
+              <h3 class="text-xl font-semibold text-stone-900 mb-2">{{ s.titulo }}</h3>
+              <p class="text-stone-700">{{ s.desc }}</p>
+            </article>
+          </div>
+        </div>
+
+        <button (click)="next()" class="h-10 w-10 rounded-full border" type="button">›</button>
+      </div>
+
+      <div class="flex justify-center gap-2 mt-4">
+        <button *ngFor="let _ of servicios; let k = index"
+          (click)="go(k)"
+          class="h-2 w-2 rounded-full"
+          [ngClass]="k===i ? 'bg-amber-600' : 'bg-amber-200'"
+          type="button"></button>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto" class="py-16 bg-amber-50/40">
+    <div class="max-w-7xl mx-auto px-4">
+      <h2 class="text-3xl font-semibold text-stone-900 mb-6">Contacto</h2>
+      <p class="text-stone-700">Copiapó, Atacama — Tel: +52 2230896</p>
+    </div>
+  </section>
+</div>

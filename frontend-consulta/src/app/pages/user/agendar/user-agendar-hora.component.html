@@ -1,0 +1,23 @@
+<div class="min-h-screen bg-amber-50/60 p-6">
+  <button (click)="volver()" type="button">← Volver</button>
+  <h1 class="text-3xl font-semibold my-4">📅 Agendar Hora</h1>
+
+  <input type="date" [value]="fecha" [min]="todayChile()"
+    (change)="changeFecha($any($event.target).value)"
+    class="px-4 py-2 border rounded-lg mb-4" />
+
+  <p *ngIf="loading">Cargando...</p>
+
+  <div *ngIf="!loading" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <button *ngFor="let h of horas" (click)="selected=h"
+      [ngClass]="selected===h ? 'bg-amber-600 text-white' : 'bg-white border'"
+      class="py-2 rounded-lg" type="button">
+      {{ h }}
+    </button>
+  </div>
+
+  <button (click)="reservar()" [disabled]="!selected"
+    class="mt-6 w-full py-3 rounded-xl bg-stone-900 text-white font-semibold disabled:opacity-60" type="button">
+    Confirmar Hora
+  </button>
+</div>

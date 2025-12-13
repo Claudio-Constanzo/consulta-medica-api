@@ -245,31 +245,40 @@ def registro_usuario(request):
         if not all([nombre, apellido, rut, email, password]):
             return Response({"detail": "Faltan datos obligatorios."}, status=400)
 
+        # Validaciones previas
         if Registro.objects.filter(email=email).exists():
             return Response({"detail": "Correo ya registrado."}, status=400)
 
         if Registro.objects.filter(rut=rut).exists():
             return Response({"detail": "RUT ya registrado."}, status=400)
 
-        registro = Registro.objects.create(
-            nombre=nombre,
-            apellido=apellido,
-            rut=rut,
-            email=email,
-            password=password
-        )
+        # Intentar crear el registro; envolver en try/except para retornar traza en caso de error (debug temporal)
+        try:
+            registro = Registro.objects.create(
+                nombre=nombre,
+                apellido=apellido,
+                rut=rut,
+                email=email,
+                password=password
+            )
 
-        return Response(
-            {
-                "idUsuario": registro.id,
-                "nombre": registro.nombre,
-                "apellido": registro.apellido,
-                "email": registro.email,
-                "rut": registro.rut,
-                "pacienteId": None,
-            },
-            status=201,
-        )
+            return Response(
+                {
+                    "idUsuario": registro.id,
+                    "nombre": registro.nombre,
+                    "apellido": registro.apellido,
+                    "email": registro.email,
+                    "rut": registro.rut,
+                    "pacienteId": None,
+                },
+                status=201,
+            )
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            print("Error creando registro:", tb)
+            # Devolver detalles mínimos en la respuesta para depuración local
+            return Response({"detail": "Internal Server Error", "error": str(e), "trace": tb}, status=500)
 
 
 @api_view(["POST"])

@@ -1,0 +1,30 @@
+<div class="min-h-screen bg-amber-50/80 flex items-center justify-center px-4">
+  <div class="w-full max-w-md bg-white rounded-3xl border border-amber-100 p-8">
+    <button (click)="goHome()" class="text-sm text-stone-600 mb-4" type="button">← Volver</button>
+
+    <h1 class="text-2xl font-semibold text-stone-900 text-center mb-2">Crear Cuenta</h1>
+
+    <div *ngIf="error" class="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+      {{ error }}
+    </div>
+
+    <form (submit)="submit($event)" class="space-y-4">
+      <input name="nombre" [(ngModel)]="form.nombre" placeholder="Nombre" class="w-full px-4 py-2 border rounded-xl" />
+      <input name="apellido" [(ngModel)]="form.apellido" placeholder="Apellido" class="w-full px-4 py-2 border rounded-xl" />
+      <input name="rut" [(ngModel)]="form.rut" placeholder="RUT" class="w-full px-4 py-2 border rounded-xl" />
+      <input name="email" [(ngModel)]="form.email" placeholder="Email" class="w-full px-4 py-2 border rounded-xl" />
+      <input type="password" name="password" [(ngModel)]="form.password" placeholder="Contraseña" class="w-full px-4 py-2 border rounded-xl" />
+      <input type="password" name="confirm" [(ngModel)]="form.confirm" placeholder="Confirmar contraseña" class="w-full px-4 py-2 border rounded-xl" />
+
+      <button type="submit" [disabled]="loading"
+        class="w-full py-3 rounded-xl bg-stone-900 text-white font-semibold disabled:opacity-60">
+        {{ loading ? 'Registrando...' : 'Registrar' }}
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-stone-600 mt-4">
+      ¿Ya tienes cuenta?
+      <button (click)="goLogin()" class="font-semibold text-stone-900" type="button">Inicia sesión</button>
+    </p>
+  </div>
+</div>

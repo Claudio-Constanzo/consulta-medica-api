@@ -104,17 +104,19 @@ export class AgendarComponent implements OnInit {
 
     // Unir fecha y hora en un único string ISO
     const fechaHora = new Date(`${fecha}T${hora}:00`);
+    const horaFinal = new Date(fechaHora.getTime() + 60 * 60 * 1000); // +1 hora
 
     // Payload que se enviará
     const payload = {
-      fecha: fechaHora.toISOString(),
+      fecha: fecha,
+      hora_inicio: hora,
+      hora_final: horaFinal.getHours().toString().padStart(2, '0') + ':00',
+      paciente_id: 1, // TODO: Obtener desde autenticación
       motivo: motivo,
-      // paciente: X,
-      // doctor: Y,
     };
 
     // Llamada al backend para crear la consulta
-    this.api.createConsulta(payload).subscribe({
+    this.api.agendarHora(payload).subscribe({
       next: () => {
         this.successMsg = 'Hora agendada correctamente.';
         this.form.patchValue({ hora: '', motivo: '' });

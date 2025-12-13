@@ -1,0 +1,14 @@
+<div class="min-h-screen bg-amber-50/60 p-6">
+  <button (click)="volver()" type="button">← Volver</button>
+  <h1 class="text-3xl font-semibold my-4">📅 Mis Citas</h1>
+
+  <p *ngIf="citas.length===0" class="text-stone-600">No tienes citas.</p>
+
+  <div *ngFor="let c of citas" class="bg-white border rounded-xl p-4 mb-3 flex justify-between">
+    <div>
+      <p class="font-semibold">{{ c.fecha }} — {{ c.hora_inicio }}</p>
+      <p class="text-stone-600">{{ c.estado }}</p>
+    </div>
+    <button *ngIf="c.estado!=='cancelada'" (click)="cancelar(c.id)" class="text-red-600" type="button">Cancelar</button>
+  </div>
+</div>

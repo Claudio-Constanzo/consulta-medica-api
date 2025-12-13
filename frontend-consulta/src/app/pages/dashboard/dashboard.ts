@@ -25,16 +25,18 @@ export class DashboardComponent implements OnInit {
     this.loading = true;
     this.errorMsg = null;
 
-    this.api.getConsultas().subscribe({
-      next: (data) => {
-        this.consultas = data;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error(err);
-        this.loading = false;
-        this.errorMsg = 'No se pudieron cargar las consultas (¿API caída o sin token?).';
-      }
-    });
+const usuarioId = Number(localStorage.getItem('idUsuario') || 0);
+
+this.api.horasUsuario(usuarioId).subscribe({
+  next: (data: any) => {
+    this.consultas = data;
+    this.loading = false;
+  },
+  error: (err: any) => {
+    console.error(err);
+    this.loading = false;
+    this.errorMsg = 'No se pudieron cargar las consultas (¿API caída o sin token?).';
+  }
+});
   }
 }

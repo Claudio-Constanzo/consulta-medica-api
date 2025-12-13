@@ -1,0 +1,15 @@
+<main class="min-h-screen bg-amber-50/40 p-6">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-3xl font-semibold">Hola {{ nombre }} {{ apellido }}</h1>
+      <p class="text-stone-500">Portal de paciente</p>
+    </div>
+    <button (click)="logout()" class="px-4 py-2 rounded-xl border" type="button">Cerrar sesión</button>
+  </div>
+
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <button (click)="go('/user/citas')" class="p-6 bg-white rounded-3xl border text-left" type="button">📅 Mis Citas</button>
+    <button (click)="go('/user/agendar')" class="p-6 bg-white rounded-3xl border text-left" type="button">🕒 Agendar Hora</button>
+    <button (click)="go('/user/ficha-medica')" class="p-6 bg-white rounded-3xl border text-left" type="button">📄 Mi Ficha</button>
+  </div>
+</main>

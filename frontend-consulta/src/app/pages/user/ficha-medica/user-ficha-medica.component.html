@@ -1,0 +1,12 @@
+<div class="min-h-screen bg-amber-50/60 p-6">
+  <button (click)="volver()" type="button">← Volver</button>
+  <h1 class="text-3xl font-semibold my-4">📄 Mis Fichas</h1>
+
+  <p *ngIf="fichas.length===0" class="text-stone-600">No hay fichas.</p>
+
+  <div *ngFor="let f of fichas" class="bg-white border rounded-xl p-4 mb-3">
+    <p class="font-semibold">{{ f.titulo }}</p>
+    <p class="text-stone-700">{{ f.notas }}</p>
+    <p class="text-stone-500 text-sm">Fecha: {{ f.hora_ficha }}</p>
+  </div>
+</div>
